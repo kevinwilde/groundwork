@@ -26,7 +26,8 @@ connection: the service worker caches the whole app, including its fonts and ico
 already lives on the device.
 
 - **Hosting:** put the contents of `dist/` on any static host that serves HTTPS (GitHub Pages,
-  Netlify, Cloudflare Pages, S3). Paths are relative and routes use the URL hash, so a sub-path such
+  Netlify, Cloudflare Pages, S3). `.github/workflows/deploy.yml` tests, builds and publishes to
+  GitHub Pages on every push to `main` (set Settings → Pages → Source to GitHub Actions). Paths are relative and routes use the URL hash, so a sub-path such
   as `username.github.io/groundwork/` works without rewrites. Service workers don't run from
   `file://`, so opening `dist/index.html` from disk doesn't work.
 - **Installing:** Chrome, Edge and Android show an **Install app** button on the Data page. On iPhone
