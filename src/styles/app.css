@@ -561,6 +561,21 @@ textarea.input {
 .time-field {
   max-width: 150px;
 }
+/* iOS Safari draws native date/time inputs at their own width and ignores width: 100%,
+   so they spill out of narrow fields. Dropping the native appearance lets them size normally;
+   tapping still opens the system picker. */
+input.input[type='date'],
+input.input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 36px;
+}
+input.input[type='date']::-webkit-date-and-time-value,
+input.input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+}
 .form-error {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
