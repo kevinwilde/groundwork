@@ -14,6 +14,16 @@
     <!-- Icon and manifest links are injected at build time by vite-plugin-pwa. -->
   </head>
   <body>
+    <noscript>
+      <div class="boot-screen">
+        <div class="boot-card noscript-card">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1 class="page-title">Groundwork needs JavaScript</h1>
+          <p>JavaScript is turned off in this browser, so the app can't start. Turn it on, then reload this page.</p>
+          <p class="muted small">Your data is stored on this device and isn't affected.</p>
+        </div>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -280,6 +280,14 @@ a {
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
+/* Shown by <noscript> in index.html. */
+.noscript-card .brand-mark {
+  width: 40px;
+  height: 40px;
+}
+.noscript-card .page-title {
+  font-size: 34px;
+}
 
 @media (max-width: 899px) {
   .app {
