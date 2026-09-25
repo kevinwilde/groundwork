@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Groundwork mark: a bumper plate seen face-on. -->
+  <circle cx="256" cy="256" r="244" fill="#1F4FC4"/>
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#173C99" stroke-width="16"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="10"/>
+  <circle cx="256" cy="256" r="70" fill="#EDF0F4"/>
+  <circle cx="256" cy="256" r="34" fill="#173C99"/>
+</svg>
