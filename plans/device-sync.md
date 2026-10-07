@@ -680,7 +680,7 @@ Syncing again always converges, for three reasons:
 ### 1. Stamps, tombstones and schema v3 (no visible change)
 - [x] `db/types.ts`: `Stamped` on all record types (including `Setting`), `Tombstone`, `Tables.tombstones`, `DataTable`, `TABLES: DataTable[]`. Fix `LABELS` and the backup `satisfies` to use `DataTable`.
 - [x] `db/db.ts`: v3 block (`tombstones: 'id, deletedAt'`, `meta: 'key'`) and typed tables.
-- [ ] `sync/hlc.ts`, `sync/scope.ts`, `sync/canonical.ts`.
+- [x] `sync/hlc.ts`, `sync/scope.ts`, `sync/canonical.ts`.
 - [ ] `data/ops.ts`: `applyOps(ops, { mode, expectSeq, origin, now, db })` as specified, plus `StaleError`. Clock, device id and `seq` are read and written inside the transaction. Local mode ignores tombstone ops.
 - [ ] `components/toast.ts`: `save(ops, opts?)`.
 - [ ] `db/seed.ts`: `libraryOps()` defaults to `createdAt: 0` and `hlc: SEED_HLC`; add `seedIndex()`.
