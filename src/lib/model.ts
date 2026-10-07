@@ -245,3 +245,19 @@ export function opsRemoveSample(d: Data): Op[] {
 // ---------- ordering ----------
 /** `order` for a record added after every other one. Missing or invalid orders from older data count as 0. */
 export const nextOrder = (list: { order: number }[]): number => Math.max(0, ...list.map((r) => (Number.isFinite(r.order) ? r.order : 0))) + 1;
+
+/**
+ * Move a body part one place up (-1) or down (1) in `sorted`, which is `Data.bodyPartsSorted`.
+ * A part moves only within its Library section: tracking among tracking, inactive among inactive.
+ * The whole list, inactive parts included, is renumbered 1..n, which also repairs duplicate or
+ * missing orders from older data. Only records whose `order` changes are written, so a move
+ * between tidy neighbours writes two records. Returns no ops when the part can't move.
+ */
+export function opsMoveBodyPart(sorted: BodyPart[], id: string, dir: -1 | 1): Op[] {
+  const i = sorted.findIndex((b) => b.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= sorted.length || !sorted[i].active !== !sorted[j].active) return [];
+  const list = [...sorted];
+  [list[i], list[j]] = [list[j], list[i]];
+  return list.flatMap((b, k) => (b.order === k + 1 ? [] : [put('bodyParts', { ...b, order: k + 1 })]));
+}

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { put } from '../data/ops';
+import { put, type Op } from '../data/ops';
+import { buildData, EMPTY_RAW } from '../data/snapshot';
 import { STARTER_TYPES } from '../db/seed';
 import type { BodyPart, Checkin, ExerciseType } from '../db/types';
-import { entry, library } from '../test/fixtures';
+import { entry, library, rawFromOps } from '../test/fixtures';
 import { parseField, parseQuick } from './fields';
-import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, painsOf, snackQueue, summarize } from './model';
+import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, opsMoveBodyPart, pace, painsOf, snackQueue, summarize } from './model';
 
 const type = (id: string) => ({ ...STARTER_TYPES.find((t) => t.id === id)!, createdAt: 0 }) as ExerciseType;
 const lift = type('type_lift');
@@ -131,5 +132,64 @@ describe('body part order', () => {
     const d = library();
     const c: Checkin = { id: 'ci1', date: '2026-09-01', time: '07:00', moment: '', overall: null, notes: '', pains: [{ bodyPartId: 'bp_gone', score: 1 }, { bodyPartId: 'bp_lperoneal', score: 2 }, { bodyPartId: 'bp_rknee', score: 4 }], createdAt: 0 };
     expect(painsOf(d, c).map((p) => [p.bp.id, p.score])).toEqual([['bp_rknee', 4], ['bp_lperoneal', 2]]);
+  });
+});
+
+describe('moving body parts', () => {
+  const part = (id: string, order: number, active = true): BodyPart => ({ id, name: id.toUpperCase(), active, notes: 'notes', order, createdAt: 7 });
+  const sorted = (...parts: BodyPart[]) => buildData({ ...EMPTY_RAW, bodyParts: parts }).bodyPartsSorted;
+  /** The new order of each record the ops write. */
+  const orders = (ops: Op[]) => Object.fromEntries(ops.flatMap((o) => (o.table === 'bodyParts' && o.type === 'put' ? [[o.value.id, o.value.order]] : [])));
+  /** Ids in Library order once the ops are applied. */
+  const after = (list: BodyPart[], ops: Op[]) => buildData(rawFromOps(ops, { ...EMPTY_RAW, bodyParts: list })).bodyPartsSorted.map((b) => b.id);
+
+  const tidy = sorted(part('a', 1), part('b', 2), part('c', 3), part('d', 4));
+
+  it('moves a part up', () => {
+    const ops = opsMoveBodyPart(tidy, 'c', -1);
+    expect(orders(ops)).toEqual({ c: 2, b: 3 });
+    expect(after(tidy, ops)).toEqual(['a', 'c', 'b', 'd']);
+  });
+
+  it('moves a part down', () => {
+    const ops = opsMoveBodyPart(tidy, 'a', 1);
+    expect(orders(ops)).toEqual({ b: 1, a: 2 });
+    expect(after(tidy, ops)).toEqual(['b', 'a', 'c', 'd']);
+  });
+
+  it('does nothing at the first and last position, or for an unknown part', () => {
+    expect(opsMoveBodyPart(tidy, 'a', -1)).toEqual([]);
+    expect(opsMoveBodyPart(tidy, 'd', 1)).toEqual([]);
+    expect(opsMoveBodyPart(tidy, 'zz', 1)).toEqual([]);
+    expect(opsMoveBodyPart([], 'a', 1)).toEqual([]);
+  });
+
+  it('only writes the records whose order changes, with every other field kept', () => {
+    const list = sorted(part('a', 1), part('b', 2), part('c', 3), part('d', 9));
+    const ops = opsMoveBodyPart(list, 'b', 1);
+    expect(ops).toEqual([put('bodyParts', { ...part('c', 3), order: 2 }), put('bodyParts', { ...part('b', 2), order: 3 }), put('bodyParts', { ...part('d', 9), order: 4 })]);
+  });
+
+  it('renumbers duplicate and missing orders', () => {
+    const missing = { ...part('c', 0), order: undefined as unknown as number };
+    const list = sorted(part('a', 5), part('b', 5), missing, part('d', 5));
+    expect(list.map((b) => b.id)).toEqual(['c', 'a', 'b', 'd']);
+    const ops = opsMoveBodyPart(list, 'd', -1);
+    expect(orders(ops)).toEqual({ c: 1, a: 2, d: 3, b: 4 });
+    expect(after(list, ops)).toEqual(['c', 'a', 'd', 'b']);
+  });
+
+  it('keeps tracking and inactive parts in their own sections, and renumbers inactive parts too', () => {
+    // Older data: an inactive part sits between tracking ones by order.
+    const list = sorted(part('a', 1), part('x', 2, false), part('b', 3), part('y', 4, false));
+    expect(list.map((b) => b.id)).toEqual(['a', 'b', 'x', 'y']);
+    expect(opsMoveBodyPart(list, 'b', 1)).toEqual([]);
+    expect(opsMoveBodyPart(list, 'x', -1)).toEqual([]);
+    const ops = opsMoveBodyPart(list, 'b', -1);
+    expect(orders(ops)).toEqual({ b: 1, a: 2, x: 3 });
+    expect(after(list, ops)).toEqual(['b', 'a', 'x', 'y']);
+    const inactive = opsMoveBodyPart(list, 'y', -1);
+    expect(orders(inactive)).toEqual({ b: 2, y: 3, x: 4 });
+    expect(after(list, inactive)).toEqual(['a', 'b', 'y', 'x']);
   });
 });
