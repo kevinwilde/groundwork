@@ -685,7 +685,7 @@ Syncing again always converges, for three reasons:
 - [x] `components/toast.ts`: `save(ops, opts?)`.
 - [x] `db/seed.ts`: `libraryOps()` defaults to `createdAt: 0` and `hlc: SEED_HLC`; add `seedIndex()`.
 - [x] `sync/legacy.ts` and `sync/local.ts` (`ensureDevice`, `stampLegacy`, `purgeTombstones`, `getMeta`/`setMeta`, `readSyncSet`). `bootstrap.ts` applies first-run seeding verbatim.
-- [ ] `DataPage` Erase: `[...TABLES.map(clear), clear('tombstones'), ...libraryOps(), put seeded]`, verbatim, plus deleting `meta.syncState`.
+- [x] `DataPage` Erase: `[...TABLES.map(clear), clear('tombstones'), ...libraryOps(), put seeded]`, verbatim, plus deleting `meta.syncState`.
 - [x] Tests:
   - `hlc.test.ts`: string order equals numeric order; the clock only moves forward when the wall clock goes backwards; counter overflow; `observe`.
   - `ops.test.ts`: puts are stamped; unchanged puts keep their stamp; a delete writes a tombstone; sample and device-local deletes don't; Undo of a delete beats its tombstone and removes it; local mode ignores tombstone ops; a verbatim replay of the inverse restores the exact state including tombstones; `StaleError`.

@@ -8,6 +8,7 @@ import { useMediaQuery, useToday } from '../data/hooks';
 import { clear, put, setSetting } from '../data/ops';
 import type { RawData } from '../data/snapshot';
 import { buildBackup, importOps, parseBackup } from '../db/backup';
+import { db } from '../db/db';
 import { libraryOps, sampleOps } from '../db/seed';
 import { TABLES, type DataTable } from '../db/types';
 import { daysBetween, toDateStr } from '../lib/dates';
@@ -16,6 +17,8 @@ import { fmtNum, plural } from '../lib/format';
 import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/install';
 import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
+import { SEED_HLC } from '../sync/hlc';
+import { deleteMeta } from '../sync/local';
 
 const LABELS: Record<DataTable, string> = {
   types: 'Exercise types',
@@ -391,7 +394,13 @@ function Danger() {
       requireText: 'ERASE',
     });
     if (!ok) return;
-    if (await save([...TABLES.map((tb) => clear(tb)), ...libraryOps(), put('settings', { key: 'seeded', value: true })])) notify('All data erased');
+    // A reset of this device only: the device id, clock and any sync setup stay, and nothing is pushed.
+    // The library goes back verbatim (SEED_HLC), so the next sync copies newer data back from GitHub without a commit.
+    const ops = [...TABLES.map((tb) => clear(tb)), clear('tombstones'), ...libraryOps(), put('settings', { key: 'seeded', value: true, hlc: SEED_HLC })];
+    if (await save(ops, { mode: 'verbatim' })) {
+      await deleteMeta(db, 'syncState');
+      notify('All data erased');
+    }
   }
   return (
     <section className="card danger-card">
