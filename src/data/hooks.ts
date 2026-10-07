@@ -45,6 +45,16 @@ export function useLocalStorage<T>(key: string, fallback: T): [T, (v: T | ((prev
   return [value, set];
 }
 
+/** The current time, refreshed every `ms` so "5 minutes ago" stays true. */
+export function useNow(ms = 30_000): number {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), ms);
+    return () => window.clearInterval(id);
+  }, [ms]);
+  return now;
+}
+
 export function useOnline(): boolean {
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   useEffect(() => {

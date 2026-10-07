@@ -86,3 +86,28 @@ export function weekdayLabels(weekStartsOn: 0 | 1, style: 'EEE' | 'EEEEE' = 'EEE
 export function dateTimeKey(date: DateStr, time?: string): string {
   return `${date} ${time || '00:00'}`;
 }
+
+/** "just now", "5 minutes ago", "2 hours ago", "yesterday", "3 days ago", or "on Sep 25". */
+export function fmtAgo(ms: number, now = Date.now()): string {
+  const sec = Math.max(0, now - ms) / 1000;
+  if (sec < 45) return 'just now';
+  const min = Math.max(1, Math.round(sec / 60));
+  if (min < 60) return `${min} ${min === 1 ? 'minute' : 'minutes'} ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} ${hr === 1 ? 'hour' : 'hours'} ago`;
+  const then = new Date(ms);
+  const days = differenceInCalendarDays(new Date(now), then);
+  if (days <= 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  return `on ${format(then, then.getFullYear() === new Date(now).getFullYear() ? 'MMM d' : 'MMM d, yyyy')}`;
+}
+
+/** "today at 09:12", "yesterday at 18:40", "Mon, Oct 5 at 08:10". */
+export function fmtWhen(ms: number, now = Date.now()): string {
+  const then = new Date(ms);
+  const days = differenceInCalendarDays(new Date(now), then);
+  const time = format(then, 'HH:mm');
+  if (days === 0) return `today at ${time}`;
+  if (days === 1) return `yesterday at ${time}`;
+  return `${format(then, then.getFullYear() === new Date(now).getFullYear() ? 'EEE, MMM d' : 'EEE, MMM d, yyyy')} at ${time}`;
+}
