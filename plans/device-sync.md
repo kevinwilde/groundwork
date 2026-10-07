@@ -722,7 +722,7 @@ Syncing again always converges, for three reasons:
   - sample and device-local lines are ignored;
   - `isManagedPath` rejects `README.md`, `package.json` and `entries/2026-1.jsonl`;
   - the manifest SHA is stable.
-- [ ] `gitsha.test.ts`: `blobSha('')` is `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391`; `blobSha('hello world\n')` is `3b18e512dba79e4c8300dd08aeb37f8e728b8dad`; non-ASCII text matches Node's `createHash('sha1')` over `blob <bytes>\0…`.
+- [x] `gitsha.test.ts`: `blobSha('')` is `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391`; `blobSha('hello world\n')` is `3b18e512dba79e4c8300dd08aeb37f8e728b8dad`; non-ASCII text matches Node's `createHash('sha1')` over `blob <bytes>\0…`.
 - [ ] `message.test.ts`: verb clauses, the 72-character fallback, `first`, `undo`, housekeeping, trailers round trip.
 
 ### 5. GitHub client and fake GitHub
