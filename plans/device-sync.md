@@ -700,7 +700,7 @@ Syncing again always converges, for three reasons:
   - sample records and `seeded`/`lastExportAt` never appear;
   - expired tombstones drop out and become purge changes.
 - [x] `integrity.test.ts`: restoring an exercise, a type and a body part; stripping a tag; repair stamps newer than both sets; restores repeat until nothing changes.
-- [ ] `mergeConvergence.test.ts`, over two fake-indexeddb databases using the real `applyOps` and `mergeSets` (no GitHub yet):
+- [x] `mergeConvergence.test.ts`, over two fake-indexeddb databases using the real `applyOps` and `mergeSets` (no GitHub yet):
   - a seeded PRNG drives about 200 random creates, edits, deletes, cascades and undos, with random direct merges and clock offsets up to ±10 min;
   - after a final merge, `readSyncSet` must be equal on both;
   - skew case: device A's clock is 5 min slow, A edits after a merge, and A's edit wins the next merge.
