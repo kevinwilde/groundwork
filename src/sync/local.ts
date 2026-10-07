@@ -1,9 +1,9 @@
 import { applyOps, del, readAll } from '../data/ops';
 import { db as defaultDb, type GroundworkDB } from '../db/db';
-import { TABLES, type Checkin, type Entry } from '../db/types';
+import { TABLES } from '../db/types';
 import { newDevice, type DeviceInfo } from './device';
 import type { ClockState } from './hlc';
-import { index, liveVersion, tombVersion, type SyncSet, type Version } from './merge';
+import { index, liveVersion, tombVersion, type Samples, type SyncSet, type Version } from './merge';
 import { isSynced, TOMBSTONE_TTL } from './scope';
 
 /** Which repository this device syncs with. Holds no secret, so the Sync card's live query may read it. */
@@ -80,7 +80,7 @@ export interface Snapshot {
   clock: ClockState | undefined;
   device: DeviceInfo | undefined;
   /** This device's sample records, for cascading deletes that arrive from other devices. */
-  samples: { entries: Entry[]; checkins: Checkin[] };
+  samples: Samples;
 }
 
 /** Everything a sync needs from this device, read in one transaction. */

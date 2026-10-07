@@ -693,7 +693,7 @@ Syncing again always converges, for three reasons:
 
 ### 2. Merge as pure functions
 - [ ] `sync/merge.ts` (`mergeSets`, `winner`, `diff`, `count`, `planToOps` with the sample cascade, retention) and `sync/integrity.ts`.
-- [ ] `merge.test.ts`, table-driven over every row of the edge-case table that the merge decides:
+- [x] `merge.test.ts`, table-driven over every row of the edge-case table that the merge decides:
   - merging the same pair twice gives an empty local plan the second time;
   - swapping sides mirrors the counts;
   - seed records unchanged on both sides produce nothing;
