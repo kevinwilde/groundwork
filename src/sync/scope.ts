@@ -13,3 +13,7 @@ export const tombstoneId = (table: DataTable, key: string) => `${table}:${key}`;
 
 /** The primary key of a record: `key` for settings, `id` for everything else. */
 export const keyOf = (table: string, rec: unknown): string => (table === 'settings' ? (rec as { key: string }).key : (rec as { id: string }).id);
+
+const DAY = 24 * 60 * 60 * 1000;
+/** Tombstones are kept for a year by `deletedAt`, then purged everywhere. */
+export const TOMBSTONE_TTL = 365 * DAY;

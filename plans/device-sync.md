@@ -684,9 +684,9 @@ Syncing again always converges, for three reasons:
 - [x] `data/ops.ts`: `applyOps(ops, { mode, expectSeq, origin, now, db })` as specified, plus `StaleError`. Clock, device id and `seq` are read and written inside the transaction. Local mode ignores tombstone ops.
 - [x] `components/toast.ts`: `save(ops, opts?)`.
 - [x] `db/seed.ts`: `libraryOps()` defaults to `createdAt: 0` and `hlc: SEED_HLC`; add `seedIndex()`.
-- [ ] `sync/legacy.ts` and `sync/local.ts` (`ensureDevice`, `stampLegacy`, `purgeTombstones`, `getMeta`/`setMeta`, `readSyncSet`). `bootstrap.ts` applies first-run seeding verbatim.
+- [x] `sync/legacy.ts` and `sync/local.ts` (`ensureDevice`, `stampLegacy`, `purgeTombstones`, `getMeta`/`setMeta`, `readSyncSet`). `bootstrap.ts` applies first-run seeding verbatim.
 - [ ] `DataPage` Erase: `[...TABLES.map(clear), clear('tombstones'), ...libraryOps(), put seeded]`, verbatim, plus deleting `meta.syncState`.
-- [ ] Tests:
+- [x] Tests:
   - `hlc.test.ts`: string order equals numeric order; the clock only moves forward when the wall clock goes backwards; counter overflow; `observe`.
   - `ops.test.ts`: puts are stamped; unchanged puts keep their stamp; a delete writes a tombstone; sample and device-local deletes don't; Undo of a delete beats its tombstone and removes it; local mode ignores tombstone ops; a verbatim replay of the inverse restores the exact state including tombstones; `StaleError`.
   - `migration.test.ts`: a v2 database opens as v3 with its data intact. After `stampLegacy`, every record has `hlc`, unchanged seed records equal the seed, edited ones get legacy stamps, and missing starter records get `SEED_GONE_HLC` tombstones. A second run changes nothing.
