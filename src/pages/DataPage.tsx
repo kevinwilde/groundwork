@@ -9,7 +9,7 @@ import { clear, put, setSetting } from '../data/ops';
 import type { RawData } from '../data/snapshot';
 import { buildBackup, importOps, parseBackup } from '../db/backup';
 import { libraryOps, sampleOps } from '../db/seed';
-import { TABLES, type TableName } from '../db/types';
+import { TABLES, type DataTable } from '../db/types';
 import { daysBetween, toDateStr } from '../lib/dates';
 import { saveTextFile, warmUpDownloads } from '../lib/files';
 import { fmtNum, plural } from '../lib/format';
@@ -17,7 +17,7 @@ import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/
 import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
 
-const LABELS: Record<TableName, string> = {
+const LABELS: Record<DataTable, string> = {
   types: 'Exercise types',
   tags: 'Tags',
   exercises: 'Exercises',

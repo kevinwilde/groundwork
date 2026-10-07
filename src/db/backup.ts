@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { clear, put, type Op } from '../data/ops';
 import type { RawData } from '../data/snapshot';
-import { TABLES, type TableName } from './types';
+import { TABLES, type DataTable } from './types';
 
 export const BACKUP_APP = 'groundwork';
 /** 2 added saved sessions. Older backups import fine; sessions default to none. */
@@ -38,25 +38,25 @@ const schemas = {
   }),
   views: z.looseObject({ id, name: z.string(), config: z.record(z.string(), z.unknown()), createdAt: ts.default(0) }),
   settings: z.object({ key: z.string().min(1), value: z.unknown() }),
-} satisfies Record<TableName, z.ZodType>;
+} satisfies Record<DataTable, z.ZodType>;
 
 const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { error: 'This file is not a Groundwork backup.' }),
   schema: z.number().max(BACKUP_SCHEMA, { error: 'This backup comes from a newer version of Groundwork.' }).default(1),
   exportedAt: z.string().optional(),
-  data: z.object(Object.fromEntries(TABLES.map((t) => [t, z.array(schemas[t] as z.ZodType).default([])])) as unknown as Record<TableName, z.ZodType>),
+  data: z.object(Object.fromEntries(TABLES.map((t) => [t, z.array(schemas[t] as z.ZodType).default([])])) as unknown as Record<DataTable, z.ZodType>),
 });
 
 export interface Backup {
   app: typeof BACKUP_APP;
   schema: number;
   exportedAt: string;
-  counts: Record<TableName, number>;
+  counts: Record<DataTable, number>;
   data: RawData;
 }
 
 export function buildBackup(raw: RawData): Backup {
-  const counts = Object.fromEntries(TABLES.map((t) => [t, raw[t].length])) as Record<TableName, number>;
+  const counts = Object.fromEntries(TABLES.map((t) => [t, raw[t].length])) as Record<DataTable, number>;
   return { app: BACKUP_APP, schema: BACKUP_SCHEMA, exportedAt: new Date().toISOString(), counts, data: raw };
 }
 

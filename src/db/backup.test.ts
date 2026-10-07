@@ -105,7 +105,7 @@ describe('applyOps (IndexedDB)', () => {
 });
 
 describe('schema upgrade', () => {
-  it('opens a version 1 database as version 2 without losing data', async () => {
+  it('opens a version 1 database as the current version without losing data', async () => {
     const name = 'gw-upgrade-test';
     const v1 = new Dexie(name);
     v1.version(1).stores({
@@ -119,10 +119,11 @@ describe('schema upgrade', () => {
 
     const v2 = new GroundworkDB(name);
     await v2.open();
-    expect(v2.verno).toBe(2);
+    expect(v2.verno).toBe(3);
     expect(await v2.entries.get('en_old')).toMatchObject({ exerciseId: 'ex_rdl', sets: [{ reps: 6, weight: 95 }] });
     expect(await v2.settings.get('seeded')).toEqual({ key: 'seeded', value: true });
     expect(await v2.sessions.count()).toBe(0);
+    expect(await v2.tombstones.count()).toBe(0);
     await v2.entries.put({ id: 'en_new', exerciseId: 'ex_bench', date: '2026-09-02', notes: '', source: 'log', sessionId: 'ses_x', createdAt: 2 });
     expect(await v2.entries.where('sessionId').equals('ses_x').count()).toBe(1);
     v2.close();
