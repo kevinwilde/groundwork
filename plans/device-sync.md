@@ -726,15 +726,15 @@ Syncing again always converges, for three reasons:
 - [x] `message.test.ts`: verb clauses, the 72-character fallback, `first`, `undo`, housekeeping, trailers round trip.
 
 ### 5. GitHub client and fake GitHub
-- [ ] `sync/github.ts`: the endpoints, headers, `cache: 'no-store'`, timeouts, chained tree creation (1 MB batches), base64 only in `putFile`, raw blob reads, and the error mapping.
-- [ ] `src/test/fakeGitHub.ts`, an in-memory GitHub behind a `fetch` function:
+- [x] `sync/github.ts`: the endpoints, headers, `cache: 'no-store'`, timeouts, chained tree creation (1 MB batches), base64 only in `putFile`, raw blob reads, and the error mapping.
+- [x] `src/test/fakeGitHub.ts`, an in-memory GitHub behind a `fetch` function:
   - repository flags (`private`, `archived`, `empty`, `defaultBranch`) and token states (`valid`, `expired`, `read-only`, `no-access`);
   - blobs keyed by real git SHA-1;
   - content-addressed trees, so identical content gives an identical SHA;
   - recursive listing; commits with server dates; `PATCH ref` with a real fast-forward check (walks parents); `PUT contents` on an empty repository;
   - 409 for git reads on an empty repository;
   - `failNext(route, response)`, `before(route, hook)` for interleavings, rate-limit responses with headers, and a request log.
-- [ ] `github.test.ts`, against the fake:
+- [x] `github.test.ts`, against the fake:
   - each status maps to the right code;
   - `retryAt` comes from `retry-after` or `x-ratelimit-reset`;
   - a `TypeError` maps to `offline`;
