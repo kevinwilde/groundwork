@@ -2,7 +2,9 @@ import { put, type Op } from '../data/ops';
 import { addDays, dayOfWeek, daysBetween, parseDate, type DateStr } from '../lib/dates';
 import { clamp } from '../lib/format';
 import { uid } from '../lib/ids';
-import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, SavedSession, Snack, Tag } from './types';
+import { SEED_HLC } from '../sync/hlc';
+import { keyOf, tombstoneId } from '../sync/scope';
+import type { BodyPart, Checkin, DataTable, Entry, Exercise, ExerciseType, SavedSession, Snack, Tag } from './types';
 
 type TypeSeed = Omit<ExerciseType, 'createdAt' | 'builtin'>;
 
@@ -107,22 +109,46 @@ const BODY_PARTS: Omit<BodyPart, 'createdAt' | 'notes'>[] = [
   { id: 'bp_lperoneal', name: 'Left peroneal tendon', active: true, order: 2 },
 ];
 
-export function typeOps(now = Date.now()): Op[] {
-  return STARTER_TYPES.map((t) => put('types', { ...t, builtin: true, createdAt: now }));
+const hlc = SEED_HLC;
+
+export function typeOps(now = 0): Op[] {
+  return STARTER_TYPES.map((t) => put('types', { ...t, builtin: true, createdAt: now, hlc }));
 }
 
-/** The starter library: types, tags, exercises, mini-exercises and body parts. */
-export function libraryOps(now = Date.now()): Op[] {
+/**
+ * The starter library: types, tags, exercises, mini-exercises and body parts. With the defaults
+ * (`createdAt: 0`, `SEED_HLC`) it is byte-identical on every device, so any edit or deletion beats it.
+ */
+export function libraryOps(now = 0): Op[] {
   return [
     ...typeOps(now),
-    ...TAGS.map(([id, name, color]): Op => put('tags', { id, name, color, createdAt: now } satisfies Tag)),
+    ...TAGS.map(([id, name, color]): Op => put('tags', { id, name, color, createdAt: now, hlc } satisfies Tag)),
     ...EXERCISES.map(([id, name, typeId, tagIds, color]): Op =>
-      put('exercises', { id, name, typeId, tagIds, color, notes: '', archived: false, createdAt: now } satisfies Exercise),
+      put('exercises', { id, name, typeId, tagIds, color, notes: '', archived: false, createdAt: now, hlc } satisfies Exercise),
     ),
-    ...SNACKS.map((s, i): Op => put('snacks', { ...s, active: true, order: i, createdAt: now } satisfies Snack)),
-    ...SESSIONS.map((s, i): Op => put('sessions', { ...s, notes: '', order: i, createdAt: now } satisfies SavedSession)),
-    ...BODY_PARTS.map((b): Op => put('bodyParts', { ...b, notes: '', createdAt: now } satisfies BodyPart)),
+    ...SNACKS.map((s, i): Op => put('snacks', { ...s, active: true, order: i, createdAt: now, hlc } satisfies Snack)),
+    ...SESSIONS.map((s, i): Op => put('sessions', { ...s, notes: '', order: i, createdAt: now, hlc } satisfies SavedSession)),
+    ...BODY_PARTS.map((b): Op => put('bodyParts', { ...b, notes: '', createdAt: now, hlc } satisfies BodyPart)),
   ];
+}
+
+export interface SeedRecord {
+  table: DataTable;
+  rec: Record<string, unknown>;
+}
+
+let index: Map<string, SeedRecord> | null = null;
+
+/** The starter library by `${table}:${id}`, for recognising unchanged starter records. */
+export function seedIndex(): Map<string, SeedRecord> {
+  if (!index) {
+    index = new Map();
+    for (const op of libraryOps()) {
+      if (op.type !== 'put' || op.table === 'tombstones') continue;
+      index.set(tombstoneId(op.table, keyOf(op.table, op.value)), { table: op.table, rec: op.value as unknown as Record<string, unknown> });
+    }
+  }
+  return index;
 }
 
 /** Deterministic PRNG so sample data looks the same every time. */
@@ -150,7 +176,7 @@ export interface SampleContext {
   bodyPartIds: Set<string>;
 }
 
-/** Ten weeks of made-up history, every record flagged `sample: true`. */
+/** Ten weeks of made-up history, every record flagged `sample: true`. Sample data never leaves the device. */
 export function sampleOps(ctx: SampleContext): Op[] {
   const r = rng(20260925);
   const pick = <T,>(arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
@@ -163,7 +189,7 @@ export function sampleOps(ctx: SampleContext): Op[] {
 
   const add = (date: DateStr, exerciseId: string, perf: Pick<Entry, 'sets' | 'values'>, hour: number, extra?: Partial<Entry>) => {
     if (!ctx.exerciseIds.has(exerciseId)) return;
-    const entry: Entry = { id: uid('en'), exerciseId, date, notes: '', source: 'log', ...perf, ...extra, sample: true, createdAt: at(date, hour, Math.floor(r() * 50)) };
+    const entry: Entry = { id: uid('en'), exerciseId, date, notes: '', source: 'log', ...perf, ...extra, sample: true, createdAt: at(date, hour, Math.floor(r() * 50)), hlc };
     ops.push(put('entries', entry));
   };
 
@@ -232,7 +258,7 @@ export function sampleOps(ctx: SampleContext): Op[] {
       ops.push(
         put('checkins', {
           id: uid('ci'), date, time: `0${hh}:${String(mm).padStart(2, '0')}`, moment: 'Morning',
-          overall: clamp(Math.round(between(2.6, 4.4) + p * 0.6), 1, 5), notes: pick(morningNotes), pains, sample: true, createdAt: at(date, hh, mm),
+          overall: clamp(Math.round(between(2.6, 4.4) + p * 0.6), 1, 5), notes: pick(morningNotes), pains, sample: true, createdAt: at(date, hh, mm), hlc,
         }),
       );
     }
@@ -241,7 +267,7 @@ export function sampleOps(ctx: SampleContext): Op[] {
       ops.push(
         put('checkins', {
           id: uid('ci'), date, time: morningRun ? '09:10' : '18:40', moment: 'Post-workout', overall: pick([4, 4, 5]), notes: pick(postNotes),
-          pains: pains.map((x) => ({ ...x, score: clamp(x.score + noise(), 0, 10) })), sample: true, createdAt: at(date, morningRun ? 9 : 18, morningRun ? 10 : 40),
+          pains: pains.map((x) => ({ ...x, score: clamp(x.score + noise(), 0, 10) })), sample: true, createdAt: at(date, morningRun ? 9 : 18, morningRun ? 10 : 40), hlc,
         }),
       );
     }
