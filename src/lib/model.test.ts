@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { put } from '../data/ops';
 import { STARTER_TYPES } from '../db/seed';
-import type { ExerciseType } from '../db/types';
+import type { Checkin, ExerciseType } from '../db/types';
 import { entry, library } from '../test/fixtures';
 import { parseField, parseQuick } from './fields';
-import { lastEntry, metrics, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, snackQueue, summarize } from './model';
+import { lastEntry, metrics, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, painsOf, snackQueue, summarize } from './model';
 
 const type = (id: string) => ({ ...STARTER_TYPES.find((t) => t.id === id)!, createdAt: 0 }) as ExerciseType;
 const lift = type('type_lift');
@@ -111,5 +111,13 @@ describe('cascading deletes', () => {
     const withCheckin = library([put('checkins', { id: 'ci1', date: '2026-09-01', time: '07:00', moment: '', overall: 3, notes: '', pains: [{ bodyPartId: 'bp_rknee', score: 4 }, { bodyPartId: 'bp_lperoneal', score: 2 }], createdAt: 0 })]);
     const ops = opsDeleteBodyPart(withCheckin, 'bp_rknee');
     expect((ops[0] as { value: { pains: unknown[] } }).value.pains).toEqual([{ bodyPartId: 'bp_lperoneal', score: 2 }]);
+  });
+});
+
+describe('body part order', () => {
+  it("lists a check-in's pain scores in Library order and skips deleted parts", () => {
+    const d = library();
+    const c: Checkin = { id: 'ci1', date: '2026-09-01', time: '07:00', moment: '', overall: null, notes: '', pains: [{ bodyPartId: 'bp_gone', score: 1 }, { bodyPartId: 'bp_lperoneal', score: 2 }, { bodyPartId: 'bp_rknee', score: 4 }], createdAt: 0 };
+    expect(painsOf(d, c).map((p) => [p.bp.id, p.score])).toEqual([['bp_rknee', 4], ['bp_lperoneal', 2]]);
   });
 });

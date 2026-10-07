@@ -1,6 +1,6 @@
 import type { Data } from '../data/snapshot';
 import { del, put, type Op } from '../data/ops';
-import type { Entry, Exercise, ExerciseType, FieldValue, MetricId, Performance, SetValues, Snack, Tag, TypeField } from '../db/types';
+import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, FieldValue, MetricId, Performance, SetValues, Snack, Tag, TypeField } from '../db/types';
 import { dateTimeKey, type DateStr } from './dates';
 import { fmtDuration, fmtDurationLong, fmtNum, fmtPace } from './format';
 
@@ -199,6 +199,12 @@ export function latestPain(d: Data, bodyPartId: string, before?: { date: DateStr
     if (!best || key > best.key) best = { key, score: p.score, date: c.date };
   }
   return best;
+}
+
+/** A check-in's pain scores in Library order. Scores for deleted body parts are left out. */
+export function painsOf(d: Data, c: Checkin): { bp: BodyPart; score: number }[] {
+  const scores = new Map(c.pains.map((p) => [p.bodyPartId, p.score]));
+  return d.bodyPartsSorted.filter((bp) => scores.has(bp.id)).map((bp) => ({ bp, score: scores.get(bp.id)! }));
 }
 
 export function ratingsCount(d: Data, bodyPartId: string): number {
