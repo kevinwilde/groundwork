@@ -773,7 +773,7 @@ Syncing again always converges, for three reasons:
 - [x] Progress, results, View commit, Undo with confirmation, error panels with the exact wording and buttons above, the expiry warning, and the clock and stale-year warnings.
 - [x] `lib/dates.ts` `fmtAgo` and `fmtWhen` (with tests), the `sync` icon, `__APP_VERSION__` and `src/globals.d.ts`, version in the Install card, `package.json` set to 1.1.0.
 - [x] Wording updates in Backup, Restore, Install and Erase, plus the manifest and meta descriptions.
-- [ ] Browser check on the dev server, pointing `createGitHub` at the fake through a dev-only `?fakeGitHub` switch (`import.meta.env.DEV` only): setup, first sync, results, Undo, each error panel, phone width and dark mode.
+- [x] Browser check on the dev server, pointing `createGitHub` at the fake through a dev-only `?fakeGitHub` switch (`import.meta.env.DEV` only): setup, first sync, results, Undo, each error panel, phone width and dark mode.
 
 ### 8. Automatic sync (deferred, not in this version)
 - [ ] `sync/auto.ts` and `<AutoSync />` in `App.tsx`: the triggers, debounce, minimum interval, backoff until `retryAt`, stopping errors, toasts, and the toggle in the card (`meta.github.auto`, **off by default**).
@@ -824,6 +824,31 @@ Syncing again always converges, for three reasons:
   - [ ] Set the token's expiry date to 3 days ahead: the warning pill appears.
   - [ ] Search the repository, an exported backup and the console for `github_pat_`: no matches.
   - [ ] View history opens the commits page. The production build shows no CSP violations.
+
+### Verification notes (implementation of phases 1–7 and 9, 2026-10-07)
+
+- **Automated:** `npm run typecheck` is clean and `npm test` passes 201 tests in 22 files, all offline (fake-indexeddb and `src/test/fakeGitHub.ts`). Beyond the unit tests listed in the checklist: `mergeConvergence.test.ts` passed 40 seeds and `syncConvergence.test.ts` passed 30 seeds during development (each run had 40–50 injected failures, a few compare-and-swap conflicts and integrity repairs); the suite keeps 3 and 2 seeds so it stays fast.
+- **Browser, dev server with `?fakeGitHub` (Chromium browser pane):** setup with the prefilled GitHub links; Test connection for bad repository, classic token, expired token, no access, read-only, public, archived, other files (`not-groundwork`), empty, and has-data (with "last changed by iPhone"); the first sync (README commit, then "Mac (Chrome): first sync, 40 records"); a second sync that is one request ("Already up to date."); changes committed into the fake as another device, pulled with only the changed files downloaded; results with counts and View commit; Undo with its confirmation, giving "undid a sync (updated 1 tag, deleted 2 entries)"; progress lines including the retry after a 422; the error panels for offline, auth, rate-limited, github-down, public with a partial pull, and bad-data with Open file; the clock and token-expiry warnings; Rename device, Replace token, Disconnect (with the Open GitHub tokens toast); the first-sync review; Erase all followed by a sync that restores everything without a commit; the Backup card's sync wording and pill. Phone width (375 px, no horizontal scroll) and dark mode were checked. No console errors. The token never appeared in the DOM, the URL or localStorage.
+- **Production build:** `npm run build` puts the CSP meta right after the charset in `dist/index.html`, and the bundle has no trace of the fake GitHub. Served with `npm run preview`, Today (toast), Log, Calendar and Check-in (charts), Library and Data (dialog) showed no CSP violations, and all fonts loaded. The browser pane can't register service workers on localhost: that fails the same way with the CSP removed, so it isn't caused by the policy.
+- **Not verified here:** anything against real GitHub (never called; no real tokens), Safari and iOS (the Home Screen app, `-webkit-text-security`, Universal Clipboard), the "Offline" pill (the pane can't toggle `navigator.onLine`), Web Locks across two tabs, and the service worker. The manual checklist above is left for a real private repository on the deployed build.
+
+### Deviations from this plan
+
+- **Ties between tombstones** are broken by content, like live records, instead of `if (!a.live) return a`. Two devices' legacy passes create `SEED_GONE_HLC` tombstones for the same starter record with different `deletedAt`, and the plan's rule isn't commutative for them, so devices would have pushed their own copy back and forth forever.
+- **Counting repairs:** a repair counts as `restored` on a side that had the record deleted, `updated` on a side that had it live (it gets a new stamp), and `added` on a side that never had it.
+- **Privacy check before `initRepo` too:** a public, empty repository is refused before the README commit, not only before the data upload.
+- **Clock warning** looks at the newest stamp this sync brought (versions this device didn't have), not the newest stamp in the remote set. Otherwise one fast-clocked edit would warn on every sync for as long as it stays in the future.
+- **Undo subject order** follows the general rule (added, updated, deleted, restored): "Mac: undid a sync (updated 1 check-in, deleted 3 entries)", not the plan's example order.
+- **`bad-data` issues** name the field: "entries/2026-10.jsonl, line 14 (date: dates must look like 2026-09-25)".
+- **Names:** `describe()` is `describeError()` (to avoid clashing with Vitest's `describe`), the chained tree call is `createTree()`, and `Clock.next(now, node)` takes the node because one clock serves stamps for this device and repairs. Helpers live in `sync/ui/text.ts` and `sync/ui/useSyncMeta.ts` (React Fast Refresh needs component files to export only components), and the error panel in `sync/ui/ErrorPanel.tsx`.
+- **`RemoteInfo` also keeps `deviceId`**, so the card says "from this iPhone" even after a rename.
+- **Engine context** takes `beforeApply` (status.ts passes `toast.dismiss()`), `online`, `lock`, `sleep` and `random`, so the engine has no UI imports and tests inject them. The `ifAvailable` lock option and `emitWrite` are left for phase 8; `applyOps` accepts `origin` but nothing reads it yet.
+- **Order of work:** `src/db/labels.ts` (with `ITEM_NOUNS` for "logged entries" in the UI and `changesText()`) came in phase 3, because the merge-import toast needed it; `__APP_VERSION__` came with the engine, which writes it into trailers.
+- **Backups are built synchronously** from a live query of tombstones, so Export and Copy JSON don't await inside the click (Safari drops clipboard and download permission after an await).
+- **Erase and Replace import** delete `meta.syncState` in a separate write right after the reset. If that write were lost, the next sync still merges correctly; only the first-sync review would be skipped.
+- **Undo isn't offered after a partial failure;** the error panel says what arrived.
+- **Tests:** `gitsha.test.ts` pins ids computed by `git hash-object` and Node's `createHash('sha1')` instead of calling Node's crypto, since the project has no `@types/node` and dependencies can't be added. The CSP test runs the plugin over the real `index.html` rather than a full Vite build inside Vitest; the built file was checked by hand.
+- **Dev switch:** the fake is created on the first sync and exposed as `window.__fakeGitHub`. It accepts any repository name, and tokens containing `expired`, `readonly` or `noaccess` act that way, so error states can be tried in the browser.
 
 ## Risks and open questions
 
