@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { put } from '../data/ops';
 import { STARTER_TYPES } from '../db/seed';
-import type { Checkin, ExerciseType } from '../db/types';
+import type { BodyPart, Checkin, ExerciseType } from '../db/types';
 import { entry, library } from '../test/fixtures';
 import { parseField, parseQuick } from './fields';
 import { lastEntry, metrics, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, painsOf, snackQueue, summarize } from './model';
@@ -115,6 +115,13 @@ describe('cascading deletes', () => {
 });
 
 describe('body part order', () => {
+  const part = (id: string, name: string, order: number, active = true): BodyPart => ({ id, name, active, notes: '', order, createdAt: 0 });
+
+  it('lists tracking parts before inactive ones, each by order and then name', () => {
+    const d = library([put('bodyParts', part('bp_ankle', 'Ankle', 0, false)), put('bodyParts', part('bp_hip', 'Hip', 1))]);
+    expect(d.bodyPartsSorted.map((b) => b.id)).toEqual(['bp_hip', 'bp_rknee', 'bp_lperoneal', 'bp_ankle']);
+  });
+
   it("lists a check-in's pain scores in Library order and skips deleted parts", () => {
     const d = library();
     const c: Checkin = { id: 'ci1', date: '2026-09-01', time: '07:00', moment: '', overall: null, notes: '', pains: [{ bodyPartId: 'bp_gone', score: 1 }, { bodyPartId: 'bp_lperoneal', score: 2 }, { bodyPartId: 'bp_rknee', score: 4 }], createdAt: 0 };
