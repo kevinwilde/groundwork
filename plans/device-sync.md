@@ -706,9 +706,9 @@ Syncing again always converges, for three reasons:
   - skew case: device A's clock is 5 min slow, A edits after a merge, and A's edit wins the next merge.
 
 ### 3. Backups use the merge (sync by file works after this phase)
-- [ ] `backup.ts`: schema 3, `tombstones`, `hlc`, exported `recordSchemas`, `buildBackup(raw, tombstones)`, `mergeImport(local, parsed)` returning `{ ops, counts }`, `replaceImportOps(parsed)`. Merge skips sample records and device-local settings.
-- [ ] `DataPage` Restore: the new wording and a toast with counts. Export reads `db.tombstones`. Replace deletes `meta.syncState`.
-- [ ] Tests: v3 round trip; a v2 file merges using legacy stamps; merge doesn't overwrite a newer local edit; replace clears tombstones; update the existing `importOps` tests; a backup never contains `meta`.
+- [x] `backup.ts`: schema 3, `tombstones`, `hlc`, exported `recordSchemas`, `buildBackup(raw, tombstones)`, `mergeImport(local, parsed)` returning `{ ops, counts }`, `replaceImportOps(parsed)`. Merge skips sample records and device-local settings.
+- [x] `DataPage` Restore: the new wording and a toast with counts. Export reads `db.tombstones`. Replace deletes `meta.syncState`.
+- [x] Tests: v3 round trip; a v2 file merges using legacy stamps; merge doesn't overwrite a newer local edit; replace clears tombstones; update the existing `importOps` tests; a backup never contains `meta`.
 
 ### 4. Repository layout, git SHAs and commit messages (pure)
 - [ ] `sync/layout.ts`, `sync/gitsha.ts`, `sync/message.ts`, `src/db/labels.ts` (`LABELS`, `NOUNS`).

@@ -6,10 +6,9 @@ import { Button, Field, FormError, SectionHead, Segmented, PageHead } from '../c
 import { useData } from '../data/DataProvider';
 import { useMediaQuery, useToday } from '../data/hooks';
 import { clear, put, setSetting } from '../data/ops';
-import type { RawData } from '../data/snapshot';
-import { buildBackup, importOps, parseBackup } from '../db/backup';
+import { buildBackup, mergeImport, parseBackup, replaceImportOps, type BackupContents } from '../db/backup';
 import { db } from '../db/db';
-import { LABELS } from '../db/labels';
+import { changesText, LABELS } from '../db/labels';
 import { libraryOps, sampleOps } from '../db/seed';
 import { TABLES } from '../db/types';
 import { daysBetween, toDateStr } from '../lib/dates';
@@ -19,7 +18,7 @@ import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/
 import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
 import { SEED_HLC } from '../sync/hlc';
-import { deleteMeta } from '../sync/local';
+import { deleteMeta, readSyncSet } from '../sync/local';
 
 export function DataPage() {
   useEffect(warmUpDownloads, []);
@@ -47,7 +46,7 @@ function Backup() {
   const days = last ? daysBetween(toDateStr(new Date(last)), t) : null;
 
   async function exportFile() {
-    const res = await saveTextFile(`groundwork-backup-${t}.json`, JSON.stringify(buildBackup(d.raw), null, 2));
+    const res = await saveTextFile(`groundwork-backup-${t}.json`, JSON.stringify(buildBackup(d.raw, await db.tombstones.toArray()), null, 2));
     if (res === 'saved') {
       await setSetting('lastExportAt', Date.now());
       notify('Backup saved');
@@ -55,7 +54,7 @@ function Backup() {
   }
 
   async function copy() {
-    const text = JSON.stringify(buildBackup(d.raw));
+    const text = JSON.stringify(buildBackup(d.raw, await db.tombstones.toArray()));
     try {
       await navigator.clipboard.writeText(text);
       await setSetting('lastExportAt', Date.now());
@@ -96,7 +95,7 @@ function Restore() {
   const id = useId();
   const [paste, setPaste] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<{ exportedAt?: string; data: RawData } | null>(null);
+  const [pending, setPending] = useState<BackupContents | null>(null);
   const [mode, setMode] = useState<'merge' | 'replace'>('merge');
 
   function accept(text: string) {
@@ -122,11 +121,26 @@ function Restore() {
       });
       if (!ok) return;
     }
-    const total = TABLES.reduce((n, tb) => n + (tb === 'settings' ? 0 : pending.data[tb].length), 0);
-    if (await save(importOps(pending.data, mode))) {
-      notify(`Imported ${plural(total, 'record')}`);
+    const done = (message: string) => {
+      notify(message);
       setPending(null);
       setPaste('');
+    };
+    if (mode === 'replace') {
+      const total = TABLES.reduce((n, tb) => n + (tb === 'settings' ? 0 : pending.data[tb].length), 0);
+      if (await save(replaceImportOps(pending), { mode: 'verbatim' })) {
+        // A reset of this device: the next sync starts over and merges with GitHub.
+        await deleteMeta(db, 'syncState');
+        done(`Imported ${plural(total, 'record')}`);
+      }
+      return;
+    }
+    const snap = await readSyncSet(db);
+    const { ops, counts } = mergeImport(snap, pending);
+    if (!ops.length) return done('Nothing to import: this device already has everything in the backup.');
+    if (await save(ops, { mode: 'verbatim', expectSeq: snap.seq })) {
+      const text = changesText(counts);
+      done(text ? `Imported: ${text}` : 'Backup imported. Nothing visible changed.');
     }
   }
 
@@ -160,8 +174,8 @@ function Restore() {
           </Field>
           <p className="muted small">
             {mode === 'merge'
-              ? 'Adds everything from the backup. Records with the same id are overwritten by the backup copy; nothing here is deleted.'
-              : 'Deletes all data in this browser first, then loads the backup.'}
+              ? 'Keeps the most recently changed copy of each record and applies deletions saved in the backup.'
+              : 'Replaces everything on this device with the backup. If sync is on, the next sync combines it with GitHub, and newer changes from your other devices still win.'}
           </p>
           <div className="row gap-sm">
             <Button kind="ghost" onClick={() => setPending(null)}>
