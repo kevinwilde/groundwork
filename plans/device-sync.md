@@ -681,8 +681,8 @@ Syncing again always converges, for three reasons:
 - [x] `db/types.ts`: `Stamped` on all record types (including `Setting`), `Tombstone`, `Tables.tombstones`, `DataTable`, `TABLES: DataTable[]`. Fix `LABELS` and the backup `satisfies` to use `DataTable`.
 - [x] `db/db.ts`: v3 block (`tombstones: 'id, deletedAt'`, `meta: 'key'`) and typed tables.
 - [x] `sync/hlc.ts`, `sync/scope.ts`, `sync/canonical.ts`.
-- [ ] `data/ops.ts`: `applyOps(ops, { mode, expectSeq, origin, now, db })` as specified, plus `StaleError`. Clock, device id and `seq` are read and written inside the transaction. Local mode ignores tombstone ops.
-- [ ] `components/toast.ts`: `save(ops, opts?)`.
+- [x] `data/ops.ts`: `applyOps(ops, { mode, expectSeq, origin, now, db })` as specified, plus `StaleError`. Clock, device id and `seq` are read and written inside the transaction. Local mode ignores tombstone ops.
+- [x] `components/toast.ts`: `save(ops, opts?)`.
 - [ ] `db/seed.ts`: `libraryOps()` defaults to `createdAt: 0` and `hlc: SEED_HLC`; add `seedIndex()`.
 - [ ] `sync/legacy.ts` and `sync/local.ts` (`ensureDevice`, `stampLegacy`, `purgeTombstones`, `getMeta`/`setMeta`, `readSyncSet`). `bootstrap.ts` applies first-run seeding verbatim.
 - [ ] `DataPage` Erase: `[...TABLES.map(clear), clear('tombstones'), ...libraryOps(), put seeded]`, verbatim, plus deleting `meta.syncState`.

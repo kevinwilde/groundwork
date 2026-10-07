@@ -1,13 +1,13 @@
 import { toast } from 'sonner';
-import { applyOps, type Op } from '../data/ops';
+import { applyOps, type ApplyOptions, type Op } from '../data/ops';
 
 export const notify = (message: string) => toast(message);
 export const notifyError = (message: string) => toast.error(message);
 
 /** Apply ops and report failures instead of throwing. Returns the inverse ops, or null on failure. */
-export async function save(ops: Op[]): Promise<Op[] | null> {
+export async function save(ops: Op[], opts?: ApplyOptions): Promise<Op[] | null> {
   try {
-    return await applyOps(ops);
+    return await applyOps(ops, opts);
   } catch (e) {
     console.error(e);
     notifyError(`Could not save: ${(e as Error)?.message ?? e}`);
