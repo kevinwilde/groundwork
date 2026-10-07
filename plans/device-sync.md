@@ -744,8 +744,8 @@ Syncing again always converges, for three reasons:
   - chained trees above 1 MB use several requests.
 
 ### 6. Sync engine (no UI)
-- [ ] `sync/engine.ts` (`runSync`, `initRepo`, `testConnection`, `undoSync`), `sync/lock.ts`, `sync/device.ts`, `sync/errors.ts`.
-- [ ] `engine.test.ts`, with two `GroundworkDB` instances with different names and one fake:
+- [x] `sync/engine.ts` (`runSync`, `initRepo`, `testConnection`, `undoSync`), `sync/lock.ts`, `sync/device.ts`, `sync/errors.ts`.
+- [x] `engine.test.ts`, with two `GroundworkDB` instances with different names and one fake:
   - first sync to an empty repository gives the README commit, then one data commit; the files equal `renderFiles`;
   - first sync of the second device with its own data: preview counts, then sync, and both are equal;
   - a sync with nothing changed is exactly 1 request;
