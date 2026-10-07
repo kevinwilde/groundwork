@@ -711,7 +711,7 @@ Syncing again always converges, for three reasons:
 - [x] Tests: v3 round trip; a v2 file merges using legacy stamps; merge doesn't overwrite a newer local edit; replace clears tombstones; update the existing `importOps` tests; a backup never contains `meta`.
 
 ### 4. Repository layout, git SHAs and commit messages (pure)
-- [ ] `sync/layout.ts`, `sync/gitsha.ts`, `sync/message.ts`, `src/db/labels.ts` (`LABELS`, `NOUNS`).
+- [x] `sync/layout.ts`, `sync/gitsha.ts`, `sync/message.ts`, `src/db/labels.ts` (`LABELS`, `NOUNS`).
 - [x] `layout.test.ts`:
   - the same set inserted in different orders renders identical bytes;
   - key order (`id` first, `hlc` last, nested keys alphabetical) and line order per table;
@@ -723,7 +723,7 @@ Syncing again always converges, for three reasons:
   - `isManagedPath` rejects `README.md`, `package.json` and `entries/2026-1.jsonl`;
   - the manifest SHA is stable.
 - [x] `gitsha.test.ts`: `blobSha('')` is `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391`; `blobSha('hello world\n')` is `3b18e512dba79e4c8300dd08aeb37f8e728b8dad`; non-ASCII text matches Node's `createHash('sha1')` over `blob <bytes>\0…`.
-- [ ] `message.test.ts`: verb clauses, the 72-character fallback, `first`, `undo`, housekeeping, trailers round trip.
+- [x] `message.test.ts`: verb clauses, the 72-character fallback, `first`, `undo`, housekeeping, trailers round trip.
 
 ### 5. GitHub client and fake GitHub
 - [ ] `sync/github.ts`: the endpoints, headers, `cache: 'no-store'`, timeouts, chained tree creation (1 MB batches), base64 only in `putFile`, raw blob reads, and the error mapping.
