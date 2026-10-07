@@ -712,7 +712,7 @@ Syncing again always converges, for three reasons:
 
 ### 4. Repository layout, git SHAs and commit messages (pure)
 - [ ] `sync/layout.ts`, `sync/gitsha.ts`, `sync/message.ts`, `src/db/labels.ts` (`LABELS`, `NOUNS`).
-- [ ] `layout.test.ts`:
+- [x] `layout.test.ts`:
   - the same set inserted in different orders renders identical bytes;
   - key order (`id` first, `hlc` last, nested keys alphabetical) and line order per table;
   - month split; empty tables produce no file;
