@@ -274,6 +274,10 @@ describe('everyday syncs', () => {
     wall -= 3 * 60 * MIN;
     const out = await sync(mac);
     expect(out.kind !== 'preview' && out.warnings).toEqual([{ kind: 'clock', minutes: 180 }]);
+    // Only once: the next sync brings nothing new.
+    await logEntry(mac, 'en_mac');
+    const again = await sync(mac);
+    expect(again.kind !== 'preview' && again.warnings).toEqual([]);
     wall += TOMBSTONE_TTL + DAY;
     await logEntry(mac, 'en_year');
     const late = await sync(mac);

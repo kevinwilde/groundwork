@@ -7,7 +7,7 @@ import { createGitHub, GitHubError, type CommitInfo, type GitHubApi, type RepoIn
 import { Clock, maxHlc, SEED_HLC, wallOf } from './hlc';
 import { checkManifest, DATA_README, groupByPath, isManagedPath, MANIFEST_PATH, parseFile, renderFiles, renderManifest, STARTER_FILES } from './layout';
 import { deleteMeta, ensureDevice, getMeta, readSyncSet, setMeta, type GitHubConfig, type RemoteInfo, type Snapshot } from './local';
-import { addCounts, count, diff, emptyCounts, index, mergeSets, planToOps, type Counts } from './merge';
+import { addCounts, count, diff, emptyCounts, index, mergeSets, planToOps, sameVersion, type Counts } from './merge';
 import { commitMessage, parseTrailers } from './message';
 import { withSyncLock } from './lock';
 import { TOMBSTONE_TTL } from './scope';
@@ -218,7 +218,9 @@ async function syncOnce(ctx: SyncContext, { preview = false, reason = 'manual' }
       const top = maxHlc([...R.values()].map((v) => v.hlc));
       const stamp = Clock.from(snap.clock).observe(top).stamper(device.id, now());
       const m = mergeSets(snap.set, R, { stamp, now: now() });
-      const ahead = wallOf(top) - now();
+      // Only stamps this sync brought: once seen, a device's own later edits carry them forward too.
+      const arrived = maxHlc([...R.values()].filter((v) => !sameVersion(snap.set.get(v.key), v)).map((v) => v.hlc));
+      const ahead = wallOf(arrived) - now();
       if (ahead > 10 * MIN && !warnings.some((w) => w.kind === 'clock')) warnings.push({ kind: 'clock', minutes: Math.round(ahead / MIN) });
       if (preview) {
         const remoteRecords = [...R.values()].filter((v) => v.live).length;
