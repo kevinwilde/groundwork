@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
         manifest: {
           name: 'Groundwork',
           short_name: 'Groundwork',
-          description: 'Track lifts, runs, movement snacks and how your body feels. Works offline; your data stays on this device.',
+          description: 'Track lifts, runs, movement snacks and how your body feels. Works offline; your data stays on your devices and, if you turn on sync, your own private GitHub repository.',
           start_url: './',
           scope: './',
           display: 'standalone',

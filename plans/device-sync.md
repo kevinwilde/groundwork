@@ -772,7 +772,7 @@ Syncing again always converges, for three reasons:
 - [x] Prefilled repository and token links built from the form; masked token input with Paste; expiry date; device name; Test connection states; Rename, Replace token, Disconnect.
 - [x] Progress, results, View commit, Undo with confirmation, error panels with the exact wording and buttons above, the expiry warning, and the clock and stale-year warnings.
 - [x] `lib/dates.ts` `fmtAgo` and `fmtWhen` (with tests), the `sync` icon, `__APP_VERSION__` and `src/globals.d.ts`, version in the Install card, `package.json` set to 1.1.0.
-- [ ] Wording updates in Backup, Restore, Install and Erase, plus the manifest and meta descriptions.
+- [x] Wording updates in Backup, Restore, Install and Erase, plus the manifest and meta descriptions.
 - [ ] Browser check on the dev server, pointing `createGitHub` at the fake through a dev-only `?fakeGitHub` switch (`import.meta.env.DEV` only): setup, first sync, results, Undo, each error panel, phone width and dark mode.
 
 ### 8. Automatic sync (deferred, not in this version)

@@ -12,7 +12,7 @@ import { db } from '../db/db';
 import { changesText, LABELS } from '../db/labels';
 import { libraryOps, sampleOps } from '../db/seed';
 import { TABLES } from '../db/types';
-import { daysBetween, toDateStr } from '../lib/dates';
+import { daysBetween, fmtAgo, toDateStr } from '../lib/dates';
 import { warmUpDownloads } from '../lib/files';
 import { fmtNum, plural } from '../lib/format';
 import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/install';
@@ -21,6 +21,7 @@ import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
 import { SEED_HLC } from '../sync/hlc';
 import { deleteMeta, readSyncSet } from '../sync/local';
 import { SyncCard } from '../sync/ui/SyncCard';
+import { useSyncMeta } from '../sync/ui/useSyncMeta';
 
 export function DataPage() {
   useEffect(warmUpDownloads, []);
@@ -44,10 +45,15 @@ export function DataPage() {
 function Backup() {
   const d = useData();
   const t = useToday();
+  const sync = useSyncMeta();
   const tombstones = useTombstones();
   const [fallback, setFallback] = useState<string | null>(null);
   const last = d.settings.get('lastExportAt') as number | undefined;
   const days = last ? daysBetween(toDateStr(new Date(last)), t) : null;
+  const connected = !!sync?.github;
+  // A recent sync is a copy too, so it stands in for a stale backup.
+  const syncedAt = connected ? sync?.syncState?.at : undefined;
+  const synced = syncedAt !== undefined && Date.now() - syncedAt < 14 * 86_400_000;
 
   async function copy() {
     const text = backupJson(d.raw, tombstones);
@@ -65,9 +71,15 @@ function Backup() {
   return (
     <section className="card">
       <SectionHead title="Back up" />
-      <p>Everything lives in this browser only. Export a backup regularly, and use it to move your data to another device or browser.</p>
+      <p>
+        {connected
+          ? 'Your data is also synced to GitHub. A backup file is a copy you keep yourself.'
+          : 'Everything lives in this browser only. Export a backup regularly, and use it to move your data to another device or browser.'}
+      </p>
       <div className="row gap-sm wrap">
-        {last ? (
+        {synced && (!last || days! > 14) ? (
+          <span className="status-pill ok">Synced to GitHub {fmtAgo(syncedAt!)}</span>
+        ) : last ? (
           <span className={clsx('status-pill', days! > 14 ? 'warn' : 'ok')}>{days === 0 ? 'Backed up today' : `Last backup ${plural(days!, 'day')} ago`}</span>
         ) : (
           <span className="status-pill warn">Never backed up</span>
@@ -266,10 +278,7 @@ function Install() {
         </p>
       )}
       {!secure && <p className="muted small">Offline use needs the app to be served over HTTPS (or from localhost).</p>}
-      <p className="muted small">
-        On iPhone and iPad the installed app keeps its own data, separate from Safari. To move your history across, export a backup in one and import it
-        in the other.
-      </p>
+      <p className="muted small">On iPhone and iPad the installed app keeps its own data, separate from Safari. Use GitHub sync in the app you use, or move your history with a backup.</p>
       <p className="muted small">Groundwork {__APP_VERSION__}</p>
     </section>
   );
@@ -384,10 +393,13 @@ function Settings() {
 
 function Danger() {
   const modals = useModals();
+  const sync = useSyncMeta();
   async function erase() {
     const ok = await modals.confirm({
       title: 'Erase all data?',
-      message: 'All data in this browser will be deleted. The starter library is loaded again afterwards.',
+      message: sync?.github
+        ? "All data on this device will be deleted and the starter library loaded again. Your data on GitHub isn't touched: the next sync copies it back here. To stop syncing too, disconnect first."
+        : 'All data in this browser will be deleted. The starter library is loaded again afterwards.',
       confirmLabel: 'Erase everything',
       danger: true,
       requireText: 'ERASE',
