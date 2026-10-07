@@ -1,4 +1,4 @@
-import { byCount, LABELS, NOUNS } from '../db/labels';
+import { byCount, joinAnd, LABELS, NOUNS } from '../db/labels';
 import { TABLES, type DataTable } from '../db/types';
 import type { DeviceInfo } from './device';
 import { totalCount, VERBS, type Counts } from './merge';
@@ -8,14 +8,13 @@ export type CommitKind = 'first' | 'sync' | 'undo';
 const MAX_SUBJECT = 72;
 
 const noun = (t: DataTable, n: number) => `${n} ${NOUNS[t][n === 1 ? 0 : 1]}`;
-const and = (parts: string[]) => (parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`);
 const clean = (name: string) => name.replace(/\s+/g, ' ').trim() || 'Groundwork';
 
 /** "added 3 entries and 1 check-in, updated 1 exercise" */
 function clauses(counts: Counts): string {
   return VERBS.flatMap((verb) => {
     const tables = byCount(counts, verb);
-    return tables.length ? [`${verb} ${and(tables.map(([t, n]) => noun(t, n)))}`] : [];
+    return tables.length ? [`${verb} ${joinAnd(tables.map(([t, n]) => noun(t, n)))}`] : [];
   }).join(', ');
 }
 

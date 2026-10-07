@@ -42,6 +42,9 @@ export function byCount(counts: Counts, verb: Verb): [DataTable, number][] {
     .sort((a, b) => b[1] - a[1]);
 }
 
+/** "a", "a and b", "a, b and c". */
+export const joinAnd = (parts: string[]) => (parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`);
+
 /** "3 logged entries added · 1 check-in updated", or '' when nothing changed. */
 export function changesText(counts: Counts): string {
   return VERBS.flatMap((verb) => byCount(counts, verb).map(([t, n]) => `${items(t, n)} ${verb}`)).join(' · ');

@@ -20,6 +20,7 @@ import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
 import { SEED_HLC } from '../sync/hlc';
 import { deleteMeta, readSyncSet } from '../sync/local';
+import { SyncCard } from '../sync/ui/SyncCard';
 
 export function DataPage() {
   useEffect(warmUpDownloads, []);
@@ -27,6 +28,7 @@ export function DataPage() {
     <>
       <PageHead title="Data" eyebrow="Backups and settings" />
       <div className="data-grid">
+        <SyncCard />
         <Backup />
         <Restore />
         <Install />

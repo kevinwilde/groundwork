@@ -768,9 +768,9 @@ Syncing again always converges, for three reasons:
   - at the end, sync all devices until a full round makes no commit, then assert: every device equals the parsed remote, both equal the oracle, every commit's files parse, and no commit's tree equals its parent's.
 
 ### 7. Setup and manual sync UI
-- [ ] `sync/status.ts`, `ui/SyncCard.tsx`, `ui/SetupDialog.tsx`, `ui/FirstSyncReview.tsx`, `ui/SyncResult.tsx`. The card is first on `DataPage`, with a live query on `meta` `github`, `syncState` and `device`.
-- [ ] Prefilled repository and token links built from the form; masked token input with Paste; expiry date; device name; Test connection states; Rename, Replace token, Disconnect.
-- [ ] Progress, results, View commit, Undo with confirmation, error panels with the exact wording and buttons above, the expiry warning, and the clock and stale-year warnings.
+- [x] `sync/status.ts`, `ui/SyncCard.tsx`, `ui/SetupDialog.tsx`, `ui/FirstSyncReview.tsx`, `ui/SyncResult.tsx`. The card is first on `DataPage`, with a live query on `meta` `github`, `syncState` and `device`.
+- [x] Prefilled repository and token links built from the form; masked token input with Paste; expiry date; device name; Test connection states; Rename, Replace token, Disconnect.
+- [x] Progress, results, View commit, Undo with confirmation, error panels with the exact wording and buttons above, the expiry warning, and the clock and stale-year warnings.
 - [ ] `lib/dates.ts` `fmtAgo` and `fmtWhen` (with tests), the `sync` icon, `__APP_VERSION__` and `src/globals.d.ts`, version in the Install card, `package.json` set to 1.1.0.
 - [ ] Wording updates in Backup, Restore, Install and Erase, plus the manifest and meta descriptions.
 - [ ] Browser check on the dev server, pointing `createGitHub` at the fake through a dev-only `?fakeGitHub` switch (`import.meta.env.DEV` only): setup, first sync, results, Undo, each error panel, phone width and dark mode.
