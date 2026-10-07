@@ -1,18 +1,19 @@
 import clsx from 'clsx';
 import { useEffect, useId, useState } from 'react';
+import { backupJson, exportBackupFile, useTombstones } from '../components/backupFile';
 import { useModals } from '../components/Modal';
 import { notify, notifyError, save, saveWithUndo } from '../components/toast';
 import { Button, Field, FormError, SectionHead, Segmented, PageHead } from '../components/ui';
 import { useData } from '../data/DataProvider';
 import { useMediaQuery, useToday } from '../data/hooks';
 import { clear, put, setSetting } from '../data/ops';
-import { buildBackup, mergeImport, parseBackup, replaceImportOps, type BackupContents } from '../db/backup';
+import { mergeImport, parseBackup, replaceImportOps, type BackupContents } from '../db/backup';
 import { db } from '../db/db';
 import { changesText, LABELS } from '../db/labels';
 import { libraryOps, sampleOps } from '../db/seed';
 import { TABLES } from '../db/types';
 import { daysBetween, toDateStr } from '../lib/dates';
-import { saveTextFile, warmUpDownloads } from '../lib/files';
+import { warmUpDownloads } from '../lib/files';
 import { fmtNum, plural } from '../lib/format';
 import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/install';
 import { hasSample, opsRemoveSample } from '../lib/model';
@@ -41,20 +42,13 @@ export function DataPage() {
 function Backup() {
   const d = useData();
   const t = useToday();
+  const tombstones = useTombstones();
   const [fallback, setFallback] = useState<string | null>(null);
   const last = d.settings.get('lastExportAt') as number | undefined;
   const days = last ? daysBetween(toDateStr(new Date(last)), t) : null;
 
-  async function exportFile() {
-    const res = await saveTextFile(`groundwork-backup-${t}.json`, JSON.stringify(buildBackup(d.raw, await db.tombstones.toArray()), null, 2));
-    if (res === 'saved') {
-      await setSetting('lastExportAt', Date.now());
-      notify('Backup saved');
-    } else if (res === 'unavailable') notifyError('Saving files is not available here. Use Copy JSON instead.');
-  }
-
   async function copy() {
-    const text = JSON.stringify(buildBackup(d.raw, await db.tombstones.toArray()));
+    const text = backupJson(d.raw, tombstones);
     try {
       await navigator.clipboard.writeText(text);
       await setSetting('lastExportAt', Date.now());
@@ -78,7 +72,7 @@ function Backup() {
         )}
       </div>
       <div className="row gap-sm wrap">
-        <Button kind="primary" icon="download" onClick={exportFile}>
+        <Button kind="primary" icon="download" onClick={() => exportBackupFile(d.raw, tombstones)}>
           Export all data
         </Button>
         <Button icon="copy" onClick={copy}>
