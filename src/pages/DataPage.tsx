@@ -270,6 +270,7 @@ function Install() {
         On iPhone and iPad the installed app keeps its own data, separate from Safari. To move your history across, export a backup in one and import it
         in the other.
       </p>
+      <p className="muted small">Groundwork {__APP_VERSION__}</p>
     </section>
   );
 }

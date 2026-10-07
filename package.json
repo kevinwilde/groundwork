@@ -1,7 +1,7 @@
 {
   "name": "groundwork",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Personal exercise tracker that stores everything in the browser (IndexedDB).",
   "type": "module",
   "scripts": {
