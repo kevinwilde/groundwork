@@ -4,7 +4,7 @@ import { STARTER_TYPES } from '../db/seed';
 import type { BodyPart, Checkin, ExerciseType } from '../db/types';
 import { entry, library } from '../test/fixtures';
 import { parseField, parseQuick } from './fields';
-import { lastEntry, metrics, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, painsOf, snackQueue, summarize } from './model';
+import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, pace, painsOf, snackQueue, summarize } from './model';
 
 const type = (id: string) => ({ ...STARTER_TYPES.find((t) => t.id === id)!, createdAt: 0 }) as ExerciseType;
 const lift = type('type_lift');
@@ -120,6 +120,11 @@ describe('body part order', () => {
   it('lists tracking parts before inactive ones, each by order and then name', () => {
     const d = library([put('bodyParts', part('bp_ankle', 'Ankle', 0, false)), put('bodyParts', part('bp_hip', 'Hip', 1))]);
     expect(d.bodyPartsSorted.map((b) => b.id)).toEqual(['bp_hip', 'bp_rknee', 'bp_lperoneal', 'bp_ankle']);
+  });
+
+  it('adds new parts after the last one, ignoring missing orders', () => {
+    expect(nextOrder([])).toBe(1);
+    expect(nextOrder([part('a', 'A', 3), part('b', 'B', 1, false), { ...part('c', 'C', 0), order: undefined as unknown as number }])).toBe(4);
   });
 
   it("lists a check-in's pain scores in Library order and skips deleted parts", () => {

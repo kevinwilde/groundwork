@@ -4,7 +4,7 @@ import { put } from '../../data/ops';
 import type { BodyPart } from '../../db/types';
 import { plural } from '../../lib/format';
 import { uid } from '../../lib/ids';
-import { opsDeleteBodyPart, ratingsCount } from '../../lib/model';
+import { nextOrder, opsDeleteBodyPart, ratingsCount } from '../../lib/model';
 import { Modal, useModals } from '../Modal';
 import { notify, save, saveWithUndo } from '../toast';
 import { Button, Field, FormError, Switch } from '../ui';
@@ -14,7 +14,7 @@ export function BodyPartDialog({ bodyPart: existing, onClose }: { bodyPart?: Bod
   const modals = useModals();
   const formId = useId();
   const isNew = !existing;
-  const [bp, setBp] = useState<BodyPart>(() => existing ?? { id: uid('bp'), name: '', active: true, notes: '', order: d.raw.bodyParts.length + 1, createdAt: Date.now() });
+  const [bp, setBp] = useState<BodyPart>(() => existing ?? { id: uid('bp'), name: '', active: true, notes: '', order: nextOrder(d.raw.bodyParts), createdAt: Date.now() });
   const [error, setError] = useState<string | null>(null);
   const ratings = isNew ? 0 : ratingsCount(d, bp.id);
 

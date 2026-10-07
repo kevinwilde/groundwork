@@ -241,3 +241,7 @@ export function opsDeleteBodyPart(d: Data, id: string): Op[] {
 export function opsRemoveSample(d: Data): Op[] {
   return [...d.raw.entries.filter((e) => e.sample).map((e) => del('entries', e.id)), ...d.raw.checkins.filter((c) => c.sample).map((c) => del('checkins', c.id))];
 }
+
+// ---------- ordering ----------
+/** `order` for a record added after every other one. Missing or invalid orders from older data count as 0. */
+export const nextOrder = (list: { order: number }[]): number => Math.max(0, ...list.map((r) => (Number.isFinite(r.order) ? r.order : 0))) + 1;

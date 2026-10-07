@@ -18,7 +18,7 @@ import { painColor } from '../lib/colors';
 import { relDay } from '../lib/dates';
 import { plural } from '../lib/format';
 import { uid } from '../lib/ids';
-import { entriesFor, exerciseColor, latestPain, ratingsCount, snackStats, summarize, tagsOf, typeOf } from '../lib/model';
+import { entriesFor, exerciseColor, latestPain, nextOrder, ratingsCount, snackStats, summarize, tagsOf, typeOf } from '../lib/model';
 import { describeSession, sessionExercises, sessionStats } from '../lib/sessions';
 
 const TABS = [
@@ -315,8 +315,7 @@ function BodyPartsTab() {
   async function add() {
     const n = name.trim();
     if (!n) return;
-    const order = Math.max(0, ...d.raw.bodyParts.map((b) => b.order)) + 1;
-    if (await save([put('bodyParts', { id: uid('bp'), name: n, active: true, notes: '', order, createdAt: Date.now() })])) {
+    if (await save([put('bodyParts', { id: uid('bp'), name: n, active: true, notes: '', order: nextOrder(d.raw.bodyParts), createdAt: Date.now() })])) {
       notify(`Tracking ${n}`);
       setName('');
     }
