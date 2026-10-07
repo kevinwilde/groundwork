@@ -761,7 +761,7 @@ Syncing again always converges, for three reasons:
   - erase-all, then sync, restores the data and creates no commit;
   - an expired tombstone leaves `deleted.jsonl`;
   - `github_pat_` never appears in a backup, in `readAll()` or in any thrown error.
-- [ ] `syncConvergence.test.ts`, a seeded property test with three devices and one fake:
+- [x] `syncConvergence.test.ts`, a seeded property test with three devices and one fake:
   - about 300 steps of random ops (the real builders from `lib/model.ts`) and random syncs, with clock offsets up to ±10 min;
   - random interleavings (a `before` hook runs another device's whole sync at a random point) and 5% injected request failures;
   - after every step, fold every device's `readSyncSet` into an oracle (per key, the highest `hlc` ever seen);
