@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { BodyPartDialog } from '../components/dialogs/BodyPartDialog';
 import { ExerciseDialog } from '../components/dialogs/ExerciseDialog';
@@ -18,7 +18,7 @@ import { painColor } from '../lib/colors';
 import { relDay } from '../lib/dates';
 import { plural } from '../lib/format';
 import { uid } from '../lib/ids';
-import { entriesFor, exerciseColor, latestPain, nextOrder, ratingsCount, snackStats, summarize, tagsOf, typeOf } from '../lib/model';
+import { entriesFor, exerciseColor, latestPain, nextOrder, opsMoveBodyPart, ratingsCount, snackStats, summarize, tagsOf, typeOf } from '../lib/model';
 import { describeSession, sessionExercises, sessionStats } from '../lib/sessions';
 
 const TABS = [
@@ -304,13 +304,47 @@ function TypesTab() {
   );
 }
 
+type Dir = -1 | 1;
+const moveButtonId = (id: string, dir: Dir) => `bp-move-${dir < 0 ? 'up' : 'down'}-${id}`;
+
 function BodyPartsTab() {
   const d = useData();
   const t = useToday();
   const modals = useModals();
   const [name, setName] = useState('');
+  const [reordering, setReordering] = useState(false);
+  const [moveStatus, setMoveStatus] = useState('');
   const active = d.bodyPartsSorted.filter((b) => b.active);
   const inactive = d.bodyPartsSorted.filter((b) => !b.active);
+  const canReorder = active.length > 1 || inactive.length > 1;
+  const showMoves = reordering && canReorder;
+
+  // While a move is saving, further taps wait for the new order instead of re-sending the old move.
+  // Once it arrives, a keyboard user's focus goes back to the moved row (re-sorting the list drops it).
+  const moving = useRef<{ id: string; dir: Dir; refocus: boolean } | null>(null);
+  useEffect(() => {
+    const m = moving.current;
+    if (!m) return;
+    moving.current = null;
+    if (!m.refocus) return;
+    const button = (dir: Dir) => document.getElementById(moveButtonId(m.id, dir)) as HTMLButtonElement | null;
+    const same = button(m.dir);
+    (same && !same.disabled ? same : button(m.dir === -1 ? 1 : -1))?.focus();
+  }, [d.bodyPartsSorted]);
+
+  // No toast: the opposite arrow undoes a move, and the list itself shows the result.
+  async function move(bp: BodyPart, dir: Dir, button: HTMLButtonElement) {
+    if (moving.current) return;
+    const ops = opsMoveBodyPart(d.bodyPartsSorted, bp.id, dir);
+    if (!ops.length) return;
+    moving.current = { id: bp.id, dir, refocus: document.activeElement === button };
+    if (!(await save(ops))) {
+      moving.current = null;
+      return;
+    }
+    const section = bp.active ? active : inactive;
+    setMoveStatus(`${bp.name} moved to position ${section.indexOf(bp) + dir + 1} of ${section.length}`);
+  }
 
   async function add() {
     const n = name.trim();
@@ -321,11 +355,11 @@ function BodyPartsTab() {
     }
   }
 
-  const row = (bp: BodyPart) => {
+  const row = (bp: BodyPart, i: number, section: BodyPart[]) => {
     const last = latestPain(d, bp.id);
     const n = ratingsCount(d, bp.id);
     return (
-      <div key={bp.id} className={clsx('lib-row', 'static', !bp.active && 'archived')}>
+      <div key={bp.id} className={clsx('lib-row', 'static', !bp.active && 'archived', showMoves && 'reorder')}>
         {last ? (
           <span className="pain-dot" style={vars({ '--c': painColor(last.score) })} title="Latest rating">
             {last.score}
@@ -338,17 +372,24 @@ function BodyPartsTab() {
           {bp.notes && <span className="lib-row-desc">{bp.notes}</span>}
           <span className="muted small">{n && last ? `${plural(n, 'rating')} · last ${relDay(last.date, t)}` : 'No ratings yet'}</span>
         </span>
-        <span className="lib-row-side row gap-sm">
-          <Switch
-            id={`bp-act-${bp.id}`}
-            checked={bp.active}
-            onChange={async (on) => {
-              if (await save([put('bodyParts', { ...bp, active: on })])) notify(on ? `Tracking ${bp.name} again` : `${bp.name} marked inactive. Its history is kept.`);
-            }}
-            label={bp.active ? 'Tracking' : 'Inactive'}
-          />
-          <IconButton icon="edit" label={`Edit ${bp.name}`} onClick={() => modals.open((close) => <BodyPartDialog bodyPart={bp} onClose={close} />)} />
-        </span>
+        {showMoves ? (
+          <span className="lib-move">
+            <IconButton id={moveButtonId(bp.id, -1)} icon="up" size={20} label={`Move ${bp.name} up`} disabled={i === 0} onClick={(e) => void move(bp, -1, e.currentTarget)} />
+            <IconButton id={moveButtonId(bp.id, 1)} icon="down" size={20} label={`Move ${bp.name} down`} disabled={i === section.length - 1} onClick={(e) => void move(bp, 1, e.currentTarget)} />
+          </span>
+        ) : (
+          <span className="lib-row-side row gap-sm">
+            <Switch
+              id={`bp-act-${bp.id}`}
+              checked={bp.active}
+              onChange={async (on) => {
+                if (await save([put('bodyParts', { ...bp, active: on })])) notify(on ? `Tracking ${bp.name} again` : `${bp.name} marked inactive. Its history is kept.`);
+              }}
+              label={bp.active ? 'Tracking' : 'Inactive'}
+            />
+            <IconButton icon="edit" label={`Edit ${bp.name}`} onClick={() => modals.open((close) => <BodyPartDialog bodyPart={bp} onClose={close} />)} />
+          </span>
+        )}
       </div>
     );
   };
@@ -357,6 +398,7 @@ function BodyPartsTab() {
     <>
       <p className="muted lib-intro">
         Body parts you want to rate at each check-in, such as a niggling knee. When it heals, mark it inactive: it stops asking for a rating and keeps its history.
+        Check-ins list them in the order shown here.
       </p>
       <form
         className="row gap-sm grow-first bp-add"
@@ -371,6 +413,7 @@ function BodyPartsTab() {
         </Button>
       </form>
       <SectionHead title="Tracking">
+        {canReorder && <Switch id="bp-reorder" checked={reordering} onChange={setReordering} label="Reorder" />}
         <span className="muted small">{active.length}</span>
       </SectionHead>
       {active.length ? <div className="lib-rows">{active.map(row)}</div> : <p className="muted">Nothing is being tracked. Check-ins will only ask for overall feeling and notes.</p>}
@@ -382,6 +425,9 @@ function BodyPartsTab() {
           <div className="lib-rows">{inactive.map(row)}</div>
         </>
       )}
+      <p className="visually-hidden" role="status">
+        {moveStatus}
+      </p>
     </>
   );
 }

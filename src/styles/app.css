@@ -2303,6 +2303,18 @@ button.lib-row:hover {
   font-weight: 400;
   color: var(--ink-2);
 }
+/* Reorder mode: up and down buttons replace the row's controls, sized for a fingertip. */
+.lib-move {
+  display: flex;
+  gap: 6px;
+}
+.lib-move .icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  touch-action: manipulation;
+}
 @media (max-width: 600px) {
   .lib-row {
     grid-template-columns: auto minmax(0, 1fr);
@@ -2314,6 +2326,10 @@ button.lib-row:hover {
     justify-content: flex-start;
     gap: 10px;
     text-align: left;
+  }
+  /* The move buttons stay beside the name rather than wrapping below it. */
+  .lib-row.reorder {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 }
 .tag-grid {
