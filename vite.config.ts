@@ -2,12 +2,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { cspPlugin } from './csp';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig(({ mode }) => ({
   // Relative base so the build works at a domain root or a sub-path (e.g. GitHub Pages).
   base: './',
+  // Shown on the Data page and written into each sync commit's trailers.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
+    cspPlugin(),
     mode !== 'test' &&
       VitePWA({
         // Ask before switching to a new version, so a half-filled form is never reloaded away.
@@ -19,7 +24,7 @@ export default defineConfig(({ mode }) => ({
         manifest: {
           name: 'Groundwork',
           short_name: 'Groundwork',
-          description: 'Track lifts, runs, movement snacks and how your body feels. Works offline; your data stays on this device.',
+          description: 'Track lifts, runs, movement snacks and how your body feels. Works offline; your data stays on your devices and, if you turn on sync, your own private GitHub repository.',
           start_url: './',
           scope: './',
           display: 'standalone',

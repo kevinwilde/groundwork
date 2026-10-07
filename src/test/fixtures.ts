@@ -7,7 +7,7 @@ import type { Entry } from '../db/types';
 export function rawFromOps(ops: Op[], base: RawData = EMPTY_RAW): RawData {
   const raw: RawData = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, [...v]])) as unknown as RawData;
   for (const op of ops) {
-    if (op.type !== 'put') continue;
+    if (op.type !== 'put' || op.table === 'tombstones') continue;
     const list = raw[op.table] as { id?: string; key?: string }[];
     const key = (op.value as { id?: string; key?: string }).id ?? (op.value as { key?: string }).key;
     const i = list.findIndex((r) => (r.id ?? r.key) === key);

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, SavedSession, SavedView, Setting, Snack, Tag } from './types';
+import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, MetaRow, SavedSession, SavedView, Setting, Snack, Tag, Tombstone } from './types';
 
 export class GroundworkDB extends Dexie {
   types!: Table<ExerciseType, string>;
@@ -12,6 +12,8 @@ export class GroundworkDB extends Dexie {
   checkins!: Table<Checkin, string>;
   views!: Table<SavedView, string>;
   settings!: Table<Setting, string>;
+  tombstones!: Table<Tombstone, string>;
+  meta!: Table<MetaRow, string>;
 
   constructor(name = 'groundwork') {
     super(name);
@@ -33,6 +35,9 @@ export class GroundworkDB extends Dexie {
       entries: 'id, date, exerciseId, snackId, sessionId',
       sessions: 'id',
     });
+    // v3: device sync. Deleted records leave tombstones so deletions reach other devices;
+    // meta holds device-local state (device id, clock, sync config, token) and is never exported or synced.
+    this.version(3).stores({ tombstones: 'id, deletedAt', meta: 'key' });
   }
 }
 

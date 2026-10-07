@@ -1,34 +1,27 @@
 import clsx from 'clsx';
 import { useEffect, useId, useState } from 'react';
+import { backupJson, exportBackupFile, useTombstones } from '../components/backupFile';
 import { useModals } from '../components/Modal';
 import { notify, notifyError, save, saveWithUndo } from '../components/toast';
 import { Button, Field, FormError, SectionHead, Segmented, PageHead } from '../components/ui';
 import { useData } from '../data/DataProvider';
 import { useMediaQuery, useToday } from '../data/hooks';
 import { clear, put, setSetting } from '../data/ops';
-import type { RawData } from '../data/snapshot';
-import { buildBackup, importOps, parseBackup } from '../db/backup';
+import { mergeImport, parseBackup, replaceImportOps, type BackupContents } from '../db/backup';
+import { db } from '../db/db';
+import { changesText, LABELS } from '../db/labels';
 import { libraryOps, sampleOps } from '../db/seed';
-import { TABLES, type TableName } from '../db/types';
-import { daysBetween, toDateStr } from '../lib/dates';
-import { saveTextFile, warmUpDownloads } from '../lib/files';
+import { TABLES } from '../db/types';
+import { daysBetween, fmtAgo, toDateStr } from '../lib/dates';
+import { warmUpDownloads } from '../lib/files';
 import { fmtNum, plural } from '../lib/format';
 import { isIOS, isStandalone, promptInstall, useCanPromptInstall } from '../lib/install';
 import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
-
-const LABELS: Record<TableName, string> = {
-  types: 'Exercise types',
-  tags: 'Tags',
-  exercises: 'Exercises',
-  entries: 'Logged entries',
-  snacks: 'Mini-exercises',
-  sessions: 'Saved sessions',
-  bodyParts: 'Body parts',
-  checkins: 'Check-ins',
-  views: 'Saved calendar views',
-  settings: 'Settings',
-};
+import { SEED_HLC } from '../sync/hlc';
+import { deleteMeta, readSyncSet } from '../sync/local';
+import { SyncCard } from '../sync/ui/SyncCard';
+import { useSyncMeta } from '../sync/ui/useSyncMeta';
 
 export function DataPage() {
   useEffect(warmUpDownloads, []);
@@ -36,6 +29,7 @@ export function DataPage() {
     <>
       <PageHead title="Data" eyebrow="Backups and settings" />
       <div className="data-grid">
+        <SyncCard />
         <Backup />
         <Restore />
         <Install />
@@ -51,20 +45,18 @@ export function DataPage() {
 function Backup() {
   const d = useData();
   const t = useToday();
+  const sync = useSyncMeta();
+  const tombstones = useTombstones();
   const [fallback, setFallback] = useState<string | null>(null);
   const last = d.settings.get('lastExportAt') as number | undefined;
   const days = last ? daysBetween(toDateStr(new Date(last)), t) : null;
-
-  async function exportFile() {
-    const res = await saveTextFile(`groundwork-backup-${t}.json`, JSON.stringify(buildBackup(d.raw), null, 2));
-    if (res === 'saved') {
-      await setSetting('lastExportAt', Date.now());
-      notify('Backup saved');
-    } else if (res === 'unavailable') notifyError('Saving files is not available here. Use Copy JSON instead.');
-  }
+  const connected = !!sync?.github;
+  // A recent sync is a copy too, so it stands in for a stale backup.
+  const syncedAt = connected ? sync?.syncState?.at : undefined;
+  const synced = syncedAt !== undefined && Date.now() - syncedAt < 14 * 86_400_000;
 
   async function copy() {
-    const text = JSON.stringify(buildBackup(d.raw));
+    const text = backupJson(d.raw, tombstones);
     try {
       await navigator.clipboard.writeText(text);
       await setSetting('lastExportAt', Date.now());
@@ -79,16 +71,22 @@ function Backup() {
   return (
     <section className="card">
       <SectionHead title="Back up" />
-      <p>Everything lives in this browser only. Export a backup regularly, and use it to move your data to another device or browser.</p>
+      <p>
+        {connected
+          ? 'Your data is also synced to GitHub. A backup file is a copy you keep yourself.'
+          : 'Everything lives in this browser only. Export a backup regularly, and use it to move your data to another device or browser.'}
+      </p>
       <div className="row gap-sm wrap">
-        {last ? (
+        {synced && (!last || days! > 14) ? (
+          <span className="status-pill ok">Synced to GitHub {fmtAgo(syncedAt!)}</span>
+        ) : last ? (
           <span className={clsx('status-pill', days! > 14 ? 'warn' : 'ok')}>{days === 0 ? 'Backed up today' : `Last backup ${plural(days!, 'day')} ago`}</span>
         ) : (
           <span className="status-pill warn">Never backed up</span>
         )}
       </div>
       <div className="row gap-sm wrap">
-        <Button kind="primary" icon="download" onClick={exportFile}>
+        <Button kind="primary" icon="download" onClick={() => exportBackupFile(d.raw, tombstones)}>
           Export all data
         </Button>
         <Button icon="copy" onClick={copy}>
@@ -105,7 +103,7 @@ function Restore() {
   const id = useId();
   const [paste, setPaste] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<{ exportedAt?: string; data: RawData } | null>(null);
+  const [pending, setPending] = useState<BackupContents | null>(null);
   const [mode, setMode] = useState<'merge' | 'replace'>('merge');
 
   function accept(text: string) {
@@ -131,11 +129,26 @@ function Restore() {
       });
       if (!ok) return;
     }
-    const total = TABLES.reduce((n, tb) => n + (tb === 'settings' ? 0 : pending.data[tb].length), 0);
-    if (await save(importOps(pending.data, mode))) {
-      notify(`Imported ${plural(total, 'record')}`);
+    const done = (message: string) => {
+      notify(message);
       setPending(null);
       setPaste('');
+    };
+    if (mode === 'replace') {
+      const total = TABLES.reduce((n, tb) => n + (tb === 'settings' ? 0 : pending.data[tb].length), 0);
+      if (await save(replaceImportOps(pending), { mode: 'verbatim' })) {
+        // A reset of this device: the next sync starts over and merges with GitHub.
+        await deleteMeta(db, 'syncState');
+        done(`Imported ${plural(total, 'record')}`);
+      }
+      return;
+    }
+    const snap = await readSyncSet(db);
+    const { ops, counts } = mergeImport(snap, pending);
+    if (!ops.length) return done('Nothing to import: this device already has everything in the backup.');
+    if (await save(ops, { mode: 'verbatim', expectSeq: snap.seq })) {
+      const text = changesText(counts);
+      done(text ? `Imported: ${text}` : 'Backup imported. Nothing visible changed.');
     }
   }
 
@@ -169,8 +182,8 @@ function Restore() {
           </Field>
           <p className="muted small">
             {mode === 'merge'
-              ? 'Adds everything from the backup. Records with the same id are overwritten by the backup copy; nothing here is deleted.'
-              : 'Deletes all data in this browser first, then loads the backup.'}
+              ? 'Keeps the most recently changed copy of each record and applies deletions saved in the backup.'
+              : 'Replaces everything on this device with the backup. If sync is on, the next sync combines it with GitHub, and newer changes from your other devices still win.'}
           </p>
           <div className="row gap-sm">
             <Button kind="ghost" onClick={() => setPending(null)}>
@@ -265,10 +278,8 @@ function Install() {
         </p>
       )}
       {!secure && <p className="muted small">Offline use needs the app to be served over HTTPS (or from localhost).</p>}
-      <p className="muted small">
-        On iPhone and iPad the installed app keeps its own data, separate from Safari. To move your history across, export a backup in one and import it
-        in the other.
-      </p>
+      <p className="muted small">On iPhone and iPad the installed app keeps its own data, separate from Safari. Use GitHub sync in the app you use, or move your history with a backup.</p>
+      <p className="muted small">Groundwork {__APP_VERSION__}</p>
     </section>
   );
 }
@@ -382,16 +393,25 @@ function Settings() {
 
 function Danger() {
   const modals = useModals();
+  const sync = useSyncMeta();
   async function erase() {
     const ok = await modals.confirm({
       title: 'Erase all data?',
-      message: 'All data in this browser will be deleted. The starter library is loaded again afterwards.',
+      message: sync?.github
+        ? "All data on this device will be deleted and the starter library loaded again. Your data on GitHub isn't touched: the next sync copies it back here. To stop syncing too, disconnect first."
+        : 'All data in this browser will be deleted. The starter library is loaded again afterwards.',
       confirmLabel: 'Erase everything',
       danger: true,
       requireText: 'ERASE',
     });
     if (!ok) return;
-    if (await save([...TABLES.map((tb) => clear(tb)), ...libraryOps(), put('settings', { key: 'seeded', value: true })])) notify('All data erased');
+    // A reset of this device only: the device id, clock and any sync setup stay, and nothing is pushed.
+    // The library goes back verbatim (SEED_HLC), so the next sync copies newer data back from GitHub without a commit.
+    const ops = [...TABLES.map((tb) => clear(tb)), clear('tombstones'), ...libraryOps(), put('settings', { key: 'seeded', value: true, hlc: SEED_HLC })];
+    if (await save(ops, { mode: 'verbatim' })) {
+      await deleteMeta(db, 'syncState');
+      notify('All data erased');
+    }
   }
   return (
     <section className="card danger-card">

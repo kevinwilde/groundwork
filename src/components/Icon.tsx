@@ -56,6 +56,7 @@ const PATHS = {
   ),
   filter: <path d="M4 5.5h16l-6.2 7.3V19l-3.6-1.8v-4.4z" />,
   heart: <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" />,
+  sync: <path d="M4.6 10.2A7.6 7.6 0 0 1 18.3 7.4M18.9 3.4v4.3h-4.3M19.4 13.8A7.6 7.6 0 0 1 5.7 16.6M5.1 20.6v-4.3h4.3" />,
 } as const;
 
 export type IconName = keyof typeof PATHS;
