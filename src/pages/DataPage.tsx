@@ -9,8 +9,9 @@ import { clear, put, setSetting } from '../data/ops';
 import type { RawData } from '../data/snapshot';
 import { buildBackup, importOps, parseBackup } from '../db/backup';
 import { db } from '../db/db';
+import { LABELS } from '../db/labels';
 import { libraryOps, sampleOps } from '../db/seed';
-import { TABLES, type DataTable } from '../db/types';
+import { TABLES } from '../db/types';
 import { daysBetween, toDateStr } from '../lib/dates';
 import { saveTextFile, warmUpDownloads } from '../lib/files';
 import { fmtNum, plural } from '../lib/format';
@@ -19,19 +20,6 @@ import { hasSample, opsRemoveSample } from '../lib/model';
 import { setThemePref, useThemePref, type ThemePref } from '../lib/theme';
 import { SEED_HLC } from '../sync/hlc';
 import { deleteMeta } from '../sync/local';
-
-const LABELS: Record<DataTable, string> = {
-  types: 'Exercise types',
-  tags: 'Tags',
-  exercises: 'Exercises',
-  entries: 'Logged entries',
-  snacks: 'Mini-exercises',
-  sessions: 'Saved sessions',
-  bodyParts: 'Body parts',
-  checkins: 'Check-ins',
-  views: 'Saved calendar views',
-  settings: 'Settings',
-};
 
 export function DataPage() {
   useEffect(warmUpDownloads, []);
