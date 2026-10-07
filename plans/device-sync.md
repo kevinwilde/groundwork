@@ -692,14 +692,14 @@ Syncing again always converges, for three reasons:
   - `migration.test.ts`: a v2 database opens as v3 with its data intact. After `stampLegacy`, every record has `hlc`, unchanged seed records equal the seed, edited ones get legacy stamps, and missing starter records get `SEED_GONE_HLC` tombstones. A second run changes nothing.
 
 ### 2. Merge as pure functions
-- [ ] `sync/merge.ts` (`mergeSets`, `winner`, `diff`, `count`, `planToOps` with the sample cascade, retention) and `sync/integrity.ts`.
+- [x] `sync/merge.ts` (`mergeSets`, `winner`, `diff`, `count`, `planToOps` with the sample cascade, retention) and `sync/integrity.ts`.
 - [x] `merge.test.ts`, table-driven over every row of the edge-case table that the merge decides:
   - merging the same pair twice gives an empty local plan the second time;
   - swapping sides mirrors the counts;
   - seed records unchanged on both sides produce nothing;
   - sample records and `seeded`/`lastExportAt` never appear;
   - expired tombstones drop out and become purge changes.
-- [ ] `integrity.test.ts`: restoring an exercise, a type and a body part; stripping a tag; repair stamps newer than both sets; restores repeat until nothing changes.
+- [x] `integrity.test.ts`: restoring an exercise, a type and a body part; stripping a tag; repair stamps newer than both sets; restores repeat until nothing changes.
 - [ ] `mergeConvergence.test.ts`, over two fake-indexeddb databases using the real `applyOps` and `mergeSets` (no GitHub yet):
   - a seeded PRNG drives about 200 random creates, edits, deletes, cascades and undos, with random direct merges and clock offsets up to ±10 min;
   - after a final merge, `readSyncSet` must be equal on both;

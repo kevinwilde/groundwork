@@ -2,6 +2,7 @@ import { del, put, type Op } from '../data/ops';
 import type { Checkin, DataTable, Entry, Tombstone } from '../db/types';
 import { canonical } from './canonical';
 import { isHlc, legacyStamp } from './hlc';
+import { repair } from './integrity';
 import { keyOf, TOMBSTONE_TTL, tombstoneId } from './scope';
 
 export type AnyRecord = Record<string, unknown>;
@@ -93,7 +94,8 @@ export function diff(side: SyncSet, merged: SyncSet, repaired: ReadonlySet<Key> 
   for (const [key, m] of merged) {
     const s = side.get(key);
     if (sameVersion(s, m)) continue;
-    if (m.live) out.push({ kind: 'put', key, table: m.table, rec: m.rec, verb: s?.live ? 'updated' : repaired.has(key) ? 'restored' : 'added' });
+    // A repair that brings back a record this side had deleted counts as restored.
+    if (m.live) out.push({ kind: 'put', key, table: m.table, rec: m.rec, verb: s?.live ? 'updated' : s && repaired.has(key) ? 'restored' : 'added' });
     else out.push({ kind: 'tombstone', key, table: m.table, tomb: m.tomb, hadLive: !!s?.live });
   }
   return out;
@@ -114,10 +116,11 @@ export function count(changes: Change[]): Counts {
 }
 
 /**
- * Merge two sides record by record: the newest stamp wins, and deletions win exact ties.
- * Idempotent, commutative and associative, so syncing again always converges. Pure.
+ * Merge two sides record by record: the newest stamp wins, and deletions win exact ties. Then the
+ * integrity pass repairs broken references with newly stamped versions. Idempotent, commutative and
+ * associative (repairs only add newer versions), so syncing again always converges. Pure.
  */
-export function mergeSets(L: SyncSet, R: SyncSet, { now }: MergeOptions): MergeResult {
+export function mergeSets(L: SyncSet, R: SyncSet, { stamp, now }: MergeOptions): MergeResult {
   const cutoff = now - TOMBSTONE_TTL;
   // Expired tombstones drop out of both sides; this device purges its own.
   const keep = (v: Version) => v.live || v.tomb.deletedAt >= cutoff;
@@ -125,7 +128,7 @@ export function mergeSets(L: SyncSet, R: SyncSet, { now }: MergeOptions): MergeR
   const rv = filter(R, keep);
   const merged: SyncSet = new Map();
   for (const key of new Set([...lv.keys(), ...rv.keys()])) merged.set(key, winner(lv.get(key), rv.get(key)));
-  const repaired = new Set<Key>();
+  const repaired = repair(merged, lv, rv, stamp);
   const local = [...diff(lv, merged, repaired), ...expired(L, cutoff)];
   const remote = [...diff(rv, merged, repaired), ...expired(R, cutoff)];
   return { merged, local, counts: { local: count(local), remote: count(remote) }, repairs: repaired.size };
