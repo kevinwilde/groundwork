@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { cspPlugin } from './csp';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig(({ mode }) => ({
@@ -11,6 +12,7 @@ export default defineConfig(({ mode }) => ({
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
+    cspPlugin(),
     mode !== 'test' &&
       VitePWA({
         // Ask before switching to a new version, so a half-filled form is never reloaded away.

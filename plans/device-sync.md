@@ -787,7 +787,8 @@ Syncing again always converges, for three reasons:
   - nothing runs before the first sync.
 
 ### 9. Hardening, docs and real devices
-- [ ] The production CSP plugin in `vite.config.ts`, and a test that the built `index.html` contains it. Check that charts, toasts, fonts and sync work with no CSP violations in Safari and Chrome.
+- [x] The production CSP plugin in `vite.config.ts`, and a test that the built `index.html` contains it.
+- [ ] Check that charts, toasts, fonts and sync work with no CSP violations in Safari and Chrome. (Charts, toasts, fonts and dialogs checked in the Chromium browser pane against `npm run preview`; Safari, and sync against real GitHub, are part of the manual checklist below.)
 - [ ] README: a Sync section (repository, token, per-device setup, what's in the repository, privacy, the shared `github.io` origin), the "Where data lives" note, and schema v3.
 - [ ] Manual checklist below against a real private repository on the deployed build. Add verification notes to this plan.
 

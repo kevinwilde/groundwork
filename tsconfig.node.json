@@ -14,5 +14,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["vite.config.ts", "pwa-assets.config.ts"]
+  "include": ["vite.config.ts", "pwa-assets.config.ts", "csp.ts"]
 }
