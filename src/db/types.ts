@@ -224,6 +224,7 @@ export interface Tables {
   entries: Entry;
   snacks: Snack;
   sessions: SavedSession;
+  plans: Plan;
   bodyParts: BodyPart;
   checkins: Checkin;
   views: SavedView;
@@ -235,4 +236,4 @@ export type TableName = keyof Tables;
 /** The user's data: every table except tombstones. */
 export type DataTable = Exclude<TableName, 'tombstones'>;
 
-export const TABLES: DataTable[] = ['types', 'tags', 'exercises', 'entries', 'snacks', 'sessions', 'bodyParts', 'checkins', 'views', 'settings'];
+export const TABLES: DataTable[] = ['types', 'tags', 'exercises', 'entries', 'snacks', 'sessions', 'plans', 'bodyParts', 'checkins', 'views', 'settings'];

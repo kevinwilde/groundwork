@@ -30,6 +30,12 @@ const field = z.object({
   plain: z.enum(['s', 'min']).optional(),
 });
 
+const plannedSet = z.looseObject({ target: setValues, done: setValues.optional(), skipped: z.boolean().optional(), added: z.boolean().optional() });
+const planItem = z.looseObject({
+  key: z.string().min(1), exerciseId: id, sets: z.array(plannedSet).optional(), target: setValues.optional(), done: setValues.optional(), skipped: z.boolean().optional(),
+  notes: z.string().default(''), entryId: z.string().nullable().optional(),
+});
+
 // Unknown keys pass through (z.looseObject) so newer backups keep extra data.
 // Also used to validate the files synced to GitHub (src/sync/layout.ts), without applying defaults there.
 export const recordSchemas = {
@@ -40,6 +46,10 @@ export const recordSchemas = {
   snacks: z.looseObject({ id, exerciseId: id, instruction: z.string().default(''), perDay: z.number().default(0), active: z.boolean().default(true), order: z.number().default(0), createdAt: ts.default(0), ...stamps, ...perf }),
   sessions: z.looseObject({
     id, name: z.string(), items: z.array(z.looseObject({ exerciseId: id, ...perf })).default([]), notes: z.string().default(''), order: z.number().default(0), createdAt: ts.default(0), ...stamps,
+  }),
+  plans: z.looseObject({
+    id, date, name: z.string(), sessionId: z.string().nullable().optional(), items: z.array(planItem).default([]), notes: z.string().default(''), order: z.number().default(0),
+    finishedAt: z.number().nullable().optional(), createdAt: ts.default(0), ...stamps,
   }),
   bodyParts: z.looseObject({ id, name: z.string(), active: z.boolean().default(true), notes: z.string().default(''), order: z.number().default(0), createdAt: ts.default(0), ...stamps }),
   checkins: z.looseObject({

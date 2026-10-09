@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { put, type Op } from '../data/ops';
 import { buildData, EMPTY_RAW } from '../data/snapshot';
 import { STARTER_TYPES } from '../db/seed';
-import type { BodyPart, Checkin, ExerciseType } from '../db/types';
+import type { BodyPart, Checkin, ExerciseType, Plan } from '../db/types';
 import { entry, library, rawFromOps } from '../test/fixtures';
 import { parseField, parseQuick } from './fields';
 import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, opsMoveBodyPart, pace, painsOf, snackQueue, summarize } from './model';
@@ -191,5 +191,17 @@ describe('moving body parts', () => {
     const inactive = opsMoveBodyPart(list, 'y', -1);
     expect(orders(inactive)).toEqual({ b: 2, y: 3, x: 4 });
     expect(after(list, inactive)).toEqual(['a', 'b', 'y', 'x']);
+  });
+});
+
+describe('plans in the snapshot', () => {
+  const plan = (id: string, date: string, order: number, createdAt: number): Plan => ({ id, date, name: id, items: [], notes: '', order, createdAt });
+
+  it('indexes plans by id and lists each day in the order they were added', () => {
+    const d = buildData({ ...EMPTY_RAW, plans: [plan('c', '2026-10-11', 2, 1), plan('a', '2026-10-11', 1, 5), plan('b', '2026-10-11', 1, 3), plan('z', '2026-10-12', 1, 0)] });
+    expect(d.plans.get('a')?.name).toBe('a');
+    expect(d.plansByDate.get('2026-10-11')!.map((p) => p.id)).toEqual(['b', 'a', 'c']);
+    expect(d.plansByDate.get('2026-10-12')!.map((p) => p.id)).toEqual(['z']);
+    expect(d.plansByDate.has('2026-10-13')).toBe(false);
   });
 });
