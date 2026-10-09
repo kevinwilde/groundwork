@@ -8,7 +8,7 @@ import { Button, FormError } from '../ui';
 interface Props {
   type: ExerciseType;
   slot: PlannedSet;
-  /** "Set 2", or the exercise name for a single effort. */
+  /** "Bench Press set 2", or the exercise name for a single effort. */
   name: string;
   /** Single efforts (runs) get plain inputs, no steppers. */
   single: boolean;

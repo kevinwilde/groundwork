@@ -277,6 +277,7 @@ function Workout({ plan }: { plan: Plan }) {
                 return (
                   <Fragment key={i}>
                     <SetRow
+                      exercise={ex.name}
                       type={type}
                       item={item}
                       slot={slot}
@@ -290,7 +291,7 @@ function Workout({ plan }: { plan: Plan }) {
                       <SetEditor
                         type={type}
                         slot={slot}
-                        name={single ? ex.name : `Set ${i + 1}`}
+                        name={single ? ex.name : `${ex.name} set ${i + 1}`}
                         single={single}
                         weightStep={bumpStep(type)}
                         removable={!!slot.added}
@@ -427,6 +428,8 @@ function NoteField({ name, notes, onSave }: { name: string; notes: string; onSav
 }
 
 interface SetRowProps {
+  /** The exercise's name, which starts every accessible name: rows of different exercises read alike otherwise. */
+  exercise: string;
   type: ExerciseType;
   item: PlanItem;
   slot: PlannedSet;
@@ -439,13 +442,14 @@ interface SetRowProps {
 }
 
 /** One set: its number, the target (or what was done, with the target struck through), and the tick. */
-function SetRow({ type, item, slot, index, current, open, onOpen, onTick }: SetRowProps) {
+function SetRow({ exercise, type, item, slot, index, current, open, onOpen, onTick }: SetRowProps) {
   const single = !isSetItem(item);
   const shown = slot.done ?? slot.target;
   const label = valuesText(type, item, shown);
   const planned = slot.done && diffFromTarget(slot).length && valuesText(type, item, slot.target);
   const state = slot.done ? `done${planned ? `, planned ${planned}` : ''}` : slot.skipped ? 'skipped' : 'not done';
-  const name = single ? 'Effort' : `Set ${index + 1}`;
+  // "Romanian Deadlift set 1, 6 × 135 lb, not done"; a run is just "Run, …".
+  const name = single ? exercise : `${exercise} set ${index + 1}`;
   return (
     <div className={clsx('wk-set', slot.done && 'done', slot.skipped && 'skipped', current && 'current', open && 'open')} data-set={refKey(item.key, index)}>
       <button type="button" className="wk-set-main" aria-expanded={open} aria-label={`${name}, ${label || 'no target'}, ${state}. ${slot.done ? 'Change what was done' : 'Adjust'}`} onClick={onOpen}>
