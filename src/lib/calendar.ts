@@ -1,8 +1,9 @@
 import type { Data } from '../data/snapshot';
-import type { CalendarConfig, Entry } from '../db/types';
+import type { CalendarConfig, Entry, Plan, PlanItem } from '../db/types';
 import { UNTAGGED_COLOR } from './colors';
 import { addDays, weekStartOf, type DateStr } from './dates';
 import { checkinsOn, metricDef, metrics, typeOf } from './model';
+import { planStatus, visiblePlan } from './plans';
 
 export const DEFAULT_CONFIG: CalendarConfig = {
   show: 'all', tagIds: [], tagMatch: 'any', exerciseIds: [], typeIds: [], sessionIds: [],
@@ -127,6 +128,30 @@ export function collect(d: Data, cfg: CalendarConfig, from: DateStr, to: DateStr
     return gs[0].color;
   };
   return { days, legend: order, max, match, colorOf };
+}
+
+/** A stand-in entry for a plan item, so the calendar's filter can be asked about plans too. */
+export const probeEntry = (plan: Plan, item: PlanItem): Entry => ({
+  id: '', exerciseId: item.exerciseId, date: plan.date, notes: '', source: 'log', sessionId: plan.sessionId ?? null, planId: plan.id, createdAt: 0,
+});
+
+/**
+ * Days from `from` to `to` with a planned or in-progress plan that has an exercise matching the
+ * filter: the month grid's dashed outline. Missed and done plans aren't drawn; ticked sets already
+ * show as entries.
+ */
+export function plannedDays(d: Data, match: (e: Entry) => boolean, from: DateStr, to: DateStr, today: DateStr): Set<DateStr> {
+  const out = new Set<DateStr>();
+  for (const [date, plans] of d.plansByDate) {
+    if (date < from || date > to) continue;
+    const shown = plans.some((p) => {
+      const vis = visiblePlan(d, p);
+      const status = planStatus(vis, today);
+      return (status === 'planned' || status === 'in-progress') && vis.items.some((item) => match(probeEntry(p, item)));
+    });
+    if (shown) out.add(date);
+  }
+  return out;
 }
 
 /** 0 (nothing) to 4 (the busiest day in range). */

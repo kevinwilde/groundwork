@@ -3041,6 +3041,33 @@ code {
   }
 }
 
+.plan-day-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-day-list .plan-today-row {
+  flex-wrap: wrap;
+}
+.plan-day-actions {
+  display: flex;
+  gap: 4px;
+}
+@media (max-width: 899px) {
+  .plan-day-actions .btn,
+  .modal-body .section-head .btn {
+    height: 44px;
+  }
+}
+/* Calendar: a planned or in-progress plan draws a dashed outline inside its day (the focus ring stays free). */
+.cal-day.planned::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
 /* ---------- workout ---------- */
 /* Phone-first, for one thumb: big rows, a 44 × 44 tick on the right. */
 .link-btn {

@@ -6,7 +6,7 @@ import { Button, Empty, vars } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { useToday } from '../../data/hooks';
 import type { CalendarConfig } from '../../db/types';
-import { feelingOn, heatLevel, painOn, type Collected } from '../../lib/calendar';
+import { feelingOn, heatLevel, painOn, plannedDays, type Collected } from '../../lib/calendar';
 import { bands, feelingColor, painColor, tint } from '../../lib/colors';
 import { addDays, dayOfMonth, dayOfWeek, daysInMonth, fmtDate, fmtLong, parseDate, weekStartOf, weekdayLabels, type DateStr } from '../../lib/dates';
 import { plural } from '../../lib/format';
@@ -28,6 +28,7 @@ export function MonthGrid({ data, config, from, to, onDay }: GridProps & { from:
   const cells: DateStr[] = [];
   for (let x = start; x <= end; x = addDays(x, 1)) cells.push(x);
   const heat = config.colorBy === 'heat';
+  const planned = plannedDays(d, data.match, start, end, t);
 
   return (
     <div className={clsx('cal-month', heat && 'heat')}>
@@ -50,10 +51,10 @@ export function MonthGrid({ data, config, from, to, onDay }: GridProps & { from:
           <button
             type="button"
             key={date}
-            className={clsx('cal-day', !inMonth && 'out', date === t && 'today', day && 'has', date > t && 'future')}
+            className={clsx('cal-day', !inMonth && 'out', date === t && 'today', day && 'has', date > t && 'future', planned.has(date) && 'planned')}
             style={vars({ '--fill': fill ?? 'transparent', '--bar': bar ?? 'transparent' })}
             onClick={() => onDay(date)}
-            aria-label={`${fmtLong(date)}: ${items.length ? plural(items.length, 'entry', 'entries') : 'nothing logged'}`}
+            aria-label={`${fmtLong(date)}: ${items.length ? plural(items.length, 'entry', 'entries') : 'nothing logged'}${planned.has(date) ? ', workout planned' : ''}`}
           >
             <span className="cal-top">
               <span className="cal-num">{dayOfMonth(date)}</span>

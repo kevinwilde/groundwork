@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { put } from '../data/ops';
+import type { Plan } from '../db/types';
 import { entry, library } from '../test/fixtures';
-import { collect, DEFAULT_CONFIG, describeConfig, heatLevel, lastMatch, normalizeConfig, sameConfig, weeklyActive } from './calendar';
+import { collect, DEFAULT_CONFIG, describeConfig, heatLevel, lastMatch, makeMatcher, normalizeConfig, plannedDays, sameConfig, weeklyActive } from './calendar';
 
 const rdl = entry('ex_rdl', '2026-09-07', { sets: [{ reps: 6, weight: 100 }, { reps: 6, weight: 100 }] });
 const squat = entry('ex_squat', '2026-09-07', { sets: [{ reps: 5, weight: 135 }] });
@@ -88,5 +89,30 @@ describe('summaries over time', () => {
     expect(describeConfig(d, { ...DEFAULT_CONFIG, show: 'tags', tagIds: ['tag_lower', 'tag_core'], tagMatch: 'all' }).what).toBe('lower body + core');
     expect(sameConfig(normalizeConfig({ show: 'all' }), DEFAULT_CONFIG)).toBe(true);
     expect(sameConfig(normalizeConfig({ colorBy: 'heat' }), DEFAULT_CONFIG)).toBe(false);
+  });
+});
+
+describe('planned days', () => {
+  const plan = (id: string, date: string, exerciseId: string, extra: Partial<Plan> = {}): Plan => ({
+    id, date, name: id, items: [{ key: `${id}_i`, exerciseId, notes: '', sets: [{ target: { reps: 5, weight: 100 } }] }], notes: '', order: 1, createdAt: 0, sessionId: null, ...extra,
+  });
+  const withPlans = library([
+    put('plans', plan('future', '2026-09-20', 'ex_bench')),
+    put('plans', plan('run', '2026-09-21', 'ex_run', { sessionId: 'ses_upper_a' })),
+    put('plans', plan('missed', '2026-09-08', 'ex_bench')),
+    put('plans', { ...plan('started', '2026-09-09', 'ex_squat'), items: [{ key: 'k', exerciseId: 'ex_squat', notes: '', sets: [{ target: { reps: 5 }, done: { reps: 5 } }, { target: { reps: 5 } }] }] }),
+    put('plans', { ...plan('finished', '2026-09-22', 'ex_bench'), finishedAt: 1 }),
+    put('plans', plan('gone', '2026-09-23', 'ex_deleted')),
+  ]);
+  const days = (cfg = DEFAULT_CONFIG) => [...plannedDays(withPlans, makeMatcher(withPlans, cfg), ...SEPT, '2026-09-15')].sort();
+
+  it('marks planned and in-progress plans, not missed or finished ones', () => {
+    expect(days()).toEqual(['2026-09-09', '2026-09-20', '2026-09-21']);
+  });
+  it('follows the filter, using the plan’s exercises and session', () => {
+    expect(days({ ...DEFAULT_CONFIG, show: 'exercises', exerciseIds: ['ex_run'] })).toEqual(['2026-09-21']);
+    expect(days({ ...DEFAULT_CONFIG, show: 'tags', tagIds: ['tag_push'] })).toEqual(['2026-09-20']);
+    expect(days({ ...DEFAULT_CONFIG, show: 'sessions', sessionIds: ['ses_upper_a'] })).toEqual(['2026-09-21']);
+    expect([...plannedDays(withPlans, makeMatcher(withPlans, DEFAULT_CONFIG), '2026-09-20', '2026-09-20', '2026-09-15')]).toEqual(['2026-09-20']);
   });
 });
