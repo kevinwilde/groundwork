@@ -6,16 +6,16 @@ import { Icon } from '../../components/Icon';
 import { StatusChip } from '../../components/plans/PlanCard';
 import { SetEditor } from '../../components/plans/SetEditor';
 import { usePlanWriter } from '../../components/plans/usePlanWriter';
-import { Button, Empty, PageHead } from '../../components/ui';
+import { Button, Dot, Empty, Field, IconButton, PageHead } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { useToday } from '../../data/hooks';
 import type { Exercise, ExerciseType, Plan, PlanItem, PlannedSet, SetValues } from '../../db/types';
 import { fmtDate, fmtLong, fmtShort } from '../../lib/dates';
 import { plural } from '../../lib/format';
-import { fieldText, hasValue, summarize, summarizeEntry, typeOf } from '../../lib/model';
+import { exerciseColor, fieldText, hasValue, summarize, summarizeEntry, typeOf } from '../../lib/model';
 import {
-  bumpStep, changedFields, currentSet, diffFromTarget, isSetItem, lastDone, opsMovePlan, opsRemoveSet, opsSetTargets, opsSkipSet, opsTick, opsUntick, planExercises, planProgress,
-  planStatus, setLabel, setsSharingTarget, setsText, slotsOf, visiblePlan,
+  bumpStep, changedFields, currentSet, diffFromTarget, isSetItem, itemComplete, lastDone, opsAddExercise, opsAddSet, opsMovePlan, opsRemoveSet, opsSetNotes, opsSetTargets,
+  opsSkipExercise, opsSkipSet, opsTick, opsUntick, planExercises, planProgress, planStatus, setLabel, setsSharingTarget, setsText, slotsOf, visiblePlan,
 } from '../../lib/plans';
 
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,6 +40,16 @@ interface Prompt {
 }
 
 const refKey = (itemKey: string, index: number) => `${itemKey}:${index}`;
+
+/** A finished or skipped exercise in one line: "3 × 5 @ 190 lb", "Skipped", "2 × 5 @ 190 lb · 1 skipped". */
+function summaryOf(type: ExerciseType, item: PlanItem): string {
+  const slots = slotsOf(item);
+  const done = slots.flatMap((s) => (s.done ? [s.done] : []));
+  const skipped = slots.filter((s) => s.skipped).length;
+  const text = done.length ? summarize(type, isSetItem(item) ? { sets: done } : { values: done[0] }) : '';
+  if (!text) return 'Skipped';
+  return skipped ? `${text} · ${skipped} skipped` : text;
+}
 
 /** `#/plan/<id>`: follow a plan at the gym, ticking off each set. Every tick is saved at once. */
 export function WorkoutPage() {
@@ -68,6 +78,9 @@ function Workout({ plan }: { plan: Plan }) {
   const [said, setSaid] = useState({ n: 0, text: '' });
   const [editing, setEditing] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
+  /** Finished or skipped exercises collapse to one line; these were tapped open again. */
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const [addId, setAddId] = useState('');
   const scrollNext = useRef(false);
 
   const vis = visiblePlan(d, plan);
@@ -83,8 +96,19 @@ function Workout({ plan }: { plan: Plan }) {
     if (!scrollNext.current) return;
     scrollNext.current = false;
     if (!currentKey) return;
-    document.querySelector(`[data-set="${CSS.escape(currentKey)}"]`)?.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    const row = document.querySelector<HTMLElement>(`[data-set="${CSS.escape(currentKey)}"]`);
+    row?.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    // The tick that had focus may have gone with a collapsed exercise: carry on from the next set.
+    if (!document.activeElement || document.activeElement === document.body) row?.querySelector<HTMLElement>('.wk-tick')?.focus({ preventScroll: true });
   }, [currentKey, plan]);
+
+  const toggle = (key: string) =>
+    setExpanded((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   /** Return focus to a row once its editor closes. */
   const focusRow = (key: string) => requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-set="${CSS.escape(key)}"] .wk-set-main`)?.focus({ preventScroll: true }));
@@ -136,6 +160,23 @@ function Workout({ plan }: { plan: Plan }) {
     });
   }
 
+  const addSet = (item: PlanItem, ex: Exercise) => void write((p) => opsAddSet(p, item.key)).then((ok) => ok && announce(`${ex.name}: set ${slotsOf(item).length + 1} added`));
+
+  function skipExercise(item: PlanItem, ex: Exercise) {
+    setEditing(null);
+    scrollNext.current = true;
+    void write((p, data) => opsSkipExercise(data, p, item.key)).then((ok) => ok && announce(`${ex.name} skipped`));
+  }
+
+  const saveNotes = (item: PlanItem, notes: string) => void write((p, data) => opsSetNotes(data, p, item.key, notes));
+
+  function addExercise() {
+    const ex = d.exercises.get(addId);
+    if (!ex) return;
+    setAddId('');
+    void write((p, data) => opsAddExercise(data, p, ex.id)).then((ok) => ok && announce(`${ex.name} added`));
+  }
+
   function untick(item: PlanItem, ex: Exercise, index: number) {
     if (prompt?.itemKey === item.key) setPrompt(null);
     void write((p, data) => opsUntick(data, p, item.key, index)).then((ok) => {
@@ -184,10 +225,27 @@ function Workout({ plan }: { plan: Plan }) {
         const last = lastDone(d, ex.id, plan.date, plan.id);
         const single = !isSetItem(item);
         const ask = prompt?.itemKey === item.key ? prompt : null;
+        const complete = itemComplete(item);
+        if (complete && !expanded.has(item.key)) {
+          return (
+            <section key={item.key} className="card wk-block collapsed" aria-label={ex.name}>
+              <button type="button" className="wk-summary" aria-expanded={false} onClick={() => toggle(item.key)}>
+                <Dot color={exerciseColor(d, ex)} />
+                <span className="wk-summary-name">{ex.name}</span>
+                <span className="wk-summary-text">{summaryOf(type, item)}</span>
+                <Icon name="down" size={18} />
+              </button>
+            </section>
+          );
+        }
         return (
-          <section key={item.key} className="card wk-block" aria-label={ex.name}>
-            <ExerciseHeader exercise={ex} compact />
+          <section key={item.key} className={clsx('card wk-block', complete && 'complete')} aria-label={ex.name}>
+            <div className="wk-block-head">
+              <ExerciseHeader exercise={ex} compact />
+              {complete && <IconButton icon="up" label={`Collapse ${ex.name}`} aria-expanded onClick={() => toggle(item.key)} />}
+            </div>
             <div className="plan-last">{last ? `Last: ${summarizeEntry(d, last) || 'no values'} · ${fmtShort(last.date)}` : 'First time'}</div>
+            <NoteField key={item.notes} name={ex.name} notes={item.notes} onSave={(notes) => saveNotes(item, notes)} />
             <div className="wk-sets">
               {slotsOf(item).map((slot, i) => {
                 const key = refKey(item.key, i);
@@ -237,15 +295,77 @@ function Workout({ plan }: { plan: Plan }) {
                 </div>
               </div>
             )}
+            <div className="wk-block-actions">
+              {!single && (
+                <Button kind="ghost" icon="plus" onClick={() => addSet(item, ex)}>
+                  Add set
+                </Button>
+              )}
+              {!complete && (
+                <Button kind="ghost" onClick={() => skipExercise(item, ex)}>
+                  Skip exercise
+                </Button>
+              )}
+            </div>
           </section>
         );
       })}
-      {!exercises.length && <Empty title="No exercises in this plan">Use Edit plan to add some.</Empty>}
+      {!exercises.length && <Empty title="No exercises in this plan">Add one below, or use Edit plan.</Empty>}
+
+      <section className="card wk-foot" aria-label="Finish">
+        <div className="row gap-sm grow-first">
+          <select className="input" id={`wk-add-${plan.id}`} aria-label="Add an exercise" value={addId} onChange={(e) => setAddId(e.target.value)}>
+            <option value="">Add an exercise…</option>
+            {d.exercisesSorted
+              .filter((e) => !plan.items.some((i) => i.exerciseId === e.id))
+              .map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({typeOf(d, e).name})
+                </option>
+              ))}
+          </select>
+          <Button icon="plus" onClick={addExercise} disabled={!addId}>
+            Add
+          </Button>
+        </div>
+      </section>
 
       <div className="visually-hidden" role="status" aria-live="polite">
         <span key={said.n}>{said.text}</span>
       </div>
     </>
+  );
+}
+
+/** The exercise's note for today, saved when the field loses focus and copied into its entry. */
+function NoteField({ name, notes, onSave }: { name: string; notes: string; onSave: (notes: string) => void }) {
+  const [open, setOpen] = useState(!!notes);
+  const [text, setText] = useState(notes);
+  if (!open) {
+    return (
+      <div>
+        <Button size="sm" kind="ghost" icon="plus" onClick={() => setOpen(true)}>
+          Add note
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Field label="Note" optional>
+      <textarea
+        className="input"
+        rows={2}
+        aria-label={`Note for ${name}`}
+        autoFocus={!notes}
+        placeholder="How it felt, equipment, anything to remember"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          if (text.trim() !== notes) onSave(text.trim());
+          else if (!text.trim()) setOpen(false);
+        }}
+      />
+    </Field>
   );
 }
 

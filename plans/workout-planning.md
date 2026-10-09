@@ -221,7 +221,7 @@ The workout is phone-first and laid out for one thumb.
 - [x] Set rows with tick and untick that save immediately.
 - [x] Inline set editor with steppers.
 - [x] The "Use it for sets 3–4 too?" prompt.
-- [ ] Add/skip set, skip/add exercise.
+- [x] Add/skip set, skip/add exercise.
 - [x] Single-effort rows.
 - [x] Current-set highlight and scroll.
 - [x] Live-region announcements.

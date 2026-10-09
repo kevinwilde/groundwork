@@ -3206,10 +3206,70 @@ button.wk-set-main {
   background: var(--accent-soft);
   font-size: 15px;
 }
+.wk-block-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+.wk-block.collapsed {
+  padding: 0;
+}
+.wk-summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-summary:hover {
+  background: var(--surface-2);
+}
+.wk-summary-name {
+  font: 700 18px/1.1 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.wk-summary-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.wk-summary .icon {
+  color: var(--ink-3);
+}
+.wk-foot {
+  gap: 12px;
+}
+.wk-foot .btn,
+.wk-foot .input {
+  min-height: 44px;
+}
 @media (max-width: 899px) {
   /* Keep the current set clear of the fixed tab bar when it scrolls into view. */
   .wk-set {
     scroll-margin-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px));
+  }
+  .wk-block-head .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .wk-block .btn.sm,
+  .wk-status .btn.sm,
+  .page-head .btn.sm {
+    height: 44px;
   }
 }
 
