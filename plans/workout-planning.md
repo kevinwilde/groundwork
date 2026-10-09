@@ -164,7 +164,7 @@ The workout is phone-first and laid out for one thumb.
   - **When a set differs from its target,** the row shows the target struck through.
 - **Current set:** the first unticked, unskipped set is highlighted. After a tick it scrolls into view with `block: 'nearest'`, without smooth scrolling under `prefers-reduced-motion`.
 - **Per exercise:** **Add set**, which copies the last set's target, and **Skip exercise**. A finished or skipped exercise collapses to one summary line, which can be tapped to expand it.
-- **Single-effort exercises (runs)** have one row, such as "Target 5 km · 25:00". The tick logs the target; the row opens field inputs, with no steppers.
+- **Single-effort exercises (runs)** have one row, such as "Target 5 km · 25:00". The tick, like the row, opens field inputs prefilled with the target, with no steppers: enter what actually happened, then tap **Log**. Unticking a ticked run is still one tap. A target that comes from history, a session's last run or a copied day keeps only time and distance.
 - **Bottom of the screen:** an **Add exercise** select, then **Finish**.
 - **Finish** sets `finishedAt` and shows a summary: sets done against planned, and each exercise that missed its target ("Overhead press: 14 of 15 reps"). **Done** returns to Today. A finished plan can be reopened.
 - **Announcements:** a visually hidden `role=status` announces each tick ("Bench press set 2 logged, 5 × 190 lb").
@@ -259,6 +259,7 @@ Agreed during implementation (2026-10-09):
 - **`PlannedSet.added`:** an optional flag on sets added during the workout, so **Remove set** is offered only for those.
 - **`EntryEditor` `keepBlank`:** a new option, off by default. Targets are optional, but `collect()` refused an exercise with only blank sets; the plan editor turns it on to keep them.
 - **Plan a workout on Today:** when the Planned card is hidden, Today's training shows a **Plan a workout** button, so Today always reaches planning.
+- **Single efforts aren't logged from their target:** a run's target used to copy every field from the last run (heart rate, elevation, RPE), so a plain tick logged last time's readings as if they'd been measured. Targets taken from history, a session's last run or a copied day now keep only `duration` and `distance` (`effortTarget()`), and a run's tick opens the field inputs instead of logging at once.
 - **Repository format wording:** after the `FORMAT` bump, the first sync on an older repository rewrites `groundwork.json`. When nothing else changed, the commit and the Sync card said the deleted-records list was updated. That case is now a `format` commit kind: "updated the repository format".
 
 Small additions the plan didn't spell out:

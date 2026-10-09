@@ -271,8 +271,9 @@ function Workout({ plan }: { plan: Plan }) {
               {slotsOf(item).map((slot, i) => {
                 const key = refKey(item.key, i);
                 const open = editing === key;
-                // A blank target has nothing to log as planned: the tick asks what was done instead.
-                const blank = !slot.done && !Object.values(slot.target).some(hasValue);
+                // The tick asks what was done instead of logging the target when there's nothing to log as
+                // planned (a blank target), and for a single effort, whose time and distance are measured.
+                const askFirst = single || !Object.values(slot.target).some(hasValue);
                 return (
                   <Fragment key={i}>
                     <SetRow
@@ -283,7 +284,7 @@ function Workout({ plan }: { plan: Plan }) {
                       current={currentKey === key}
                       open={open}
                       onOpen={() => (open ? closeEditor() : setEditing(key))}
-                      onTick={() => (slot.done ? untick(item, ex, i) : blank ? setEditing(key) : tick(item, ex, i))}
+                      onTick={() => (slot.done ? untick(item, ex, i) : askFirst ? setEditing(key) : tick(item, ex, i))}
                     />
                     {open && (
                       <SetEditor

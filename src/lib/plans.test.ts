@@ -8,7 +8,7 @@ import { libraryOps, STARTER_TYPES } from '../db/seed';
 import type { Entry, ExerciseType, Plan, PlannedSet, SavedSession } from '../db/types';
 import { applyTo, entry, library, liftItem, plan } from '../test/fixtures';
 import {
-  blankPlan, bumpStep, bumpTargets, changedFields, currentSet, dayLabel, daysToCopy, diffFromTarget, itemComplete, lastDone, missedPlans, opsAddExercise, opsAddSet,
+  blankPlan, bumpStep, bumpTargets, changedFields, effortTarget, currentSet, dayLabel, daysToCopy, diffFromTarget, itemComplete, lastDone, missedPlans, opsAddExercise, opsAddSet,
   opsDeleteEntry, opsDeletePlan, opsDuplicatePlan, opsFinish, opsMovePlan, opsRemoveSet, opsReopen, opsSavePlan, opsSetNotes, opsSetTargets, opsSkipExercise, opsSkipSet,
   opsTick, opsUntick, planExercises, planFromDay, planFromSession, planProgress, planShortfalls, planStatus, sameNamePlan, setLabel, setsSharingTarget, setsText, shortfall,
   upcomingPlans, visiblePlan, withTargets,
@@ -84,9 +84,20 @@ describe('building a plan', () => {
     // No history and a plan with no values: as many blank sets as the session plans.
     expect(p.items[1].sets).toEqual([{ target: {} }, { target: {} }]);
     expect(p.items[2].sets).toEqual([{ target: {} }, { target: {} }, { target: {} }]);
-    expect(p.items[3]).toMatchObject({ target: { duration: 1600, distance: 3, avgHr: 150 }, notes: '' });
+    // A run's target keeps time and distance; last time's heart rate isn't planned.
+    expect(p.items[3]).toMatchObject({ target: { duration: 1600, distance: 3 }, notes: '' });
     expect(p.items[3].sets).toBeUndefined();
     expect(new Set(p.items.map((i) => i.key)).size).toBe(4);
+  });
+
+  it('keeps only time and distance in a single effort’s target from history', () => {
+    expect(effortTarget({ duration: 1806, distance: 3.5, avgHr: 146, maxHr: 161, elevation: 70, rpe: 6 })).toEqual({ duration: 1806, distance: 3.5 });
+    expect(effortTarget({ duration: 1500, avgHr: 150, distance: '' as unknown as number })).toEqual({ duration: 1500 });
+    expect(effortTarget({ avgHr: 150 })).toEqual({});
+    expect(effortTarget(undefined)).toEqual({});
+    const d = library([put('entries', entry('ex_run', '2026-10-05', { values: { duration: 1806, distance: 3.5, avgHr: 146, maxHr: 161, elevation: 70, rpe: 6 } }))]);
+    expect(planOf(opsAddExercise(d, plan('pl', TODAY, []), 'ex_run')).items[0].target).toEqual({ duration: 1806, distance: 3.5 });
+    expect(planFromDay(d, '2026-10-05', TODAY).items[0].target).toEqual({ duration: 1806, distance: 3.5 });
   });
 
   it('adds a second plan on the same day after the first', () => {

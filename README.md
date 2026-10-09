@@ -88,7 +88,9 @@ template, and a plan is often started from one, but editing a plan never changes
   when you last did each exercise. Targets are optional. A day can hold any number of plans, for any date
   ahead. Plans can be duplicated or moved to another day. On the calendar, a day with a plan still to do
   gets a dashed outline, and the day dialog lists its plans.
-- **Working out** (`#/plan/<id>`): tap a set's tick to log it as planned; tap it again to untick. Tap the
+- **Working out** (`#/plan/<id>`): tap a set's tick to log it as planned; tap it again to untick. A run's
+  tick opens its fields instead, prefilled with the target, so you log what actually happened (targets
+  from past runs keep only time and distance, never last time's heart rate or RPE). Tap the
   row to change what you did (steppers for reps, weight, time and distance), skip it, or remove an added
   set. If you change a weight, Groundwork offers it for the later sets that had the same target. **Every
   tick is saved at once** as that exercise's entry, so closing the app or a locked phone loses nothing, and

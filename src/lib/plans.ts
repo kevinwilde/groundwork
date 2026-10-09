@@ -199,14 +199,28 @@ export function withTargets(item: PlanItem, perf: Performance): PlanItem {
 }
 
 // ---------- building plans ----------
+/** The only fields a single effort's target keeps when it comes from history: the rest are measured, not planned. */
+export const EFFORT_TARGET_KEYS = ['duration', 'distance'] as const;
+
 /**
- * A plan item for an exercise. Targets come from `perf`; without them, a set-based exercise gets blank
- * sets: `count`, else as many as last time, else 3.
+ * A single effort's target from what was done before (history, a session's last run, a copied day):
+ * time and distance only. Heart rate, elevation, RPE and the like stay blank, so a tick can't log
+ * last time's readings as today's.
+ */
+export function effortTarget(values: SetValues | undefined): SetValues {
+  const out: SetValues = {};
+  for (const k of EFFORT_TARGET_KEYS) if (values && hasValue(values[k])) out[k] = values[k];
+  return out;
+}
+
+/**
+ * A plan item for an exercise. Targets come from `perf` (for a single effort, only its time and
+ * distance); without them, a set-based exercise gets blank sets: `count`, else as many as last time, else 3.
  */
 export function itemFor(d: Data, exerciseId: string, date: DateStr, perf?: Performance, count?: number): PlanItem {
   const type = typeOf(d, d.exercises.get(exerciseId));
   const key = uid('pi');
-  if (type.mode !== 'sets') return { key, exerciseId, target: clean(perf?.values ?? {}), notes: '' };
+  if (type.mode !== 'sets') return { key, exerciseId, target: effortTarget(perf?.values), notes: '' };
   if (perf?.sets?.length) return { key, exerciseId, sets: perf.sets.map((s) => ({ target: clean(s) })), notes: '' };
   const n = count || lastDone(d, exerciseId, date)?.sets?.length || 3;
   return { key, exerciseId, sets: Array.from({ length: n }, () => ({ target: {} })), notes: '' };
