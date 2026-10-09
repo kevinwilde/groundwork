@@ -3116,6 +3116,96 @@ button.wk-set-main {
   border-style: dashed;
   color: var(--ink-3);
 }
+.wk-set.open {
+  border-color: var(--accent);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.wk-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: -7px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--surface);
+}
+.wk-editor:focus {
+  outline: none;
+}
+.wk-editor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.wk-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px 12px;
+}
+.wk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.wk-field small {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.wk-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wk-step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 600 22px/1 var(--font-body);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.wk-step:hover {
+  background: var(--surface-3);
+}
+.wk-step:active {
+  transform: translateY(1px);
+}
+.wk-input {
+  height: 44px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 17px;
+}
+.wk-editor-actions,
+.wk-prompt-actions,
+.wk-block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wk-editor-actions .btn,
+.wk-prompt-actions .btn,
+.wk-block-actions .btn {
+  min-height: 44px;
+}
+.wk-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 15px;
+}
 @media (max-width: 899px) {
   /* Keep the current set clear of the fixed tab bar when it scrolls into view. */
   .wk-set {
