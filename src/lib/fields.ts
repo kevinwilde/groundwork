@@ -71,5 +71,5 @@ export function quickPlaceholder(type: ExerciseType): string {
   const f = type.fields.filter((x) => x.kind !== 'text');
   if (!f.length) return '';
   const sample = f.map((x) => (x.key === 'reps' ? '6' : x.key === 'weight' ? '100' : x.kind === 'duration' ? '60s' : '10'));
-  return `e.g. 3 × ${sample.join(' @ ')}`;
+  return `e.g. 3/${sample.join('/')}`;
 }

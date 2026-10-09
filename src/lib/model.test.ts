@@ -4,7 +4,7 @@ import { buildData, EMPTY_RAW } from '../data/snapshot';
 import { STARTER_TYPES } from '../db/seed';
 import type { BodyPart, Checkin, ExerciseType, Plan } from '../db/types';
 import { entry, library, rawFromOps } from '../test/fixtures';
-import { parseField, parseQuick } from './fields';
+import { parseField, parseQuick, quickPlaceholder } from './fields';
 import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, opsMoveBodyPart, pace, painsOf, snackQueue, summarize } from './model';
 
 const type = (id: string) => ({ ...STARTER_TYPES.find((t) => t.id === id)!, createdAt: 0 }) as ExerciseType;
@@ -82,6 +82,10 @@ describe('quick entry', () => {
     expect(parseQuick(lift, '6@100,')).toEqual([{ reps: 6, weight: 100 }]);
     expect(parseQuick(lift, '6@100, heavy')).toBeNull();
     expect(parseQuick(lift, ' , ')).toBeNull();
+  });
+  it('suggests examples it can read', () => {
+    expect(quickPlaceholder(lift)).toBe('e.g. 3/6/100');
+    for (const t of [lift, hold, bw]) expect(parseQuick(t, quickPlaceholder(t).replace('e.g. ', ''))).toHaveLength(3);
   });
   it('rejects input it cannot map', () => {
     expect(parseQuick(lift, 'heavy')).toBeNull();

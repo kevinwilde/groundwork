@@ -54,7 +54,10 @@ Service-worker options live in `vite.config.ts`; in `npm run dev` the service wo
 - **Today**: a movement-snack card (least recently done first, daily targets, one-tap Done, a
   countdown for timed holds), what's planned, today's training, how you feel, and the current week.
 - **Log**: pick a date and an exercise and record it. Set-based types get a set table and quick entry
-  (`3x6@100`, `3 × 60s`, `5x5 225`); single-effort types get a field grid with live pace.
+  (`3x6@100`, `3 × 60s`, `5x5 225`, `2x6@100, 5@110`). `/` works in place of `x` and `@`, so
+  `3/6/100` is the same as `3x6@100` and can be typed on the iPhone's number keys; the number before
+  the first `/` is always the set count, so a single set is `6@100` or `1/6/100`. Single-effort types
+  get a field grid with live pace.
 - **Saved sessions**: a named group of exercises you do together, like "Upper A" (bench, pull-ups,
   overhead press). Pick it on the Log page and every exercise appears prefilled with what you did the
   last time you logged that session (or the exercise's last entry, or the session's plan). Adjust
