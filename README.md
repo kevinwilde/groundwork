@@ -67,7 +67,8 @@ Service-worker options live in `vite.config.ts`; in `npm run dev` the service wo
 - **Check-in**: as many per day as you like, each with a moment, an overall 1–5 feeling, notes, and a
   0–10 pain score for every active body part. Pain trend charts and history.
 - **Library**: exercises, saved sessions, mini-exercises, tags, exercise types (with a field editor) and body parts.
-  Mark a body part inactive to stop being asked about it while keeping its history.
+  Mark a body part inactive to stop being asked about it while keeping its history. Turn on **Reorder**
+  under Body parts to move them up or down; check-ins and pain trends list them in the same order.
 - **Data**: sync with GitHub, export/import (merge or replace, validated with Zod), install and offline
   status, sample history, storage status, week start and theme settings, erase all.
 

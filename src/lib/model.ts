@@ -1,6 +1,6 @@
 import type { Data } from '../data/snapshot';
 import { del, put, type Op } from '../data/ops';
-import type { Entry, Exercise, ExerciseType, FieldValue, MetricId, Performance, SetValues, Snack, Tag, TypeField } from '../db/types';
+import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, FieldValue, MetricId, Performance, SetValues, Snack, Tag, TypeField } from '../db/types';
 import { dateTimeKey, type DateStr } from './dates';
 import { fmtDuration, fmtDurationLong, fmtNum, fmtPace } from './format';
 
@@ -201,6 +201,12 @@ export function latestPain(d: Data, bodyPartId: string, before?: { date: DateStr
   return best;
 }
 
+/** A check-in's pain scores in Library order. Scores for deleted body parts are left out. */
+export function painsOf(d: Data, c: Checkin): { bp: BodyPart; score: number }[] {
+  const scores = new Map(c.pains.map((p) => [p.bodyPartId, p.score]));
+  return d.bodyPartsSorted.filter((bp) => scores.has(bp.id)).map((bp) => ({ bp, score: scores.get(bp.id)! }));
+}
+
 export function ratingsCount(d: Data, bodyPartId: string): number {
   let n = 0;
   for (const c of d.raw.checkins) for (const p of c.pains) if (p.bodyPartId === bodyPartId) n++;
@@ -234,4 +240,24 @@ export function opsDeleteBodyPart(d: Data, id: string): Op[] {
 
 export function opsRemoveSample(d: Data): Op[] {
   return [...d.raw.entries.filter((e) => e.sample).map((e) => del('entries', e.id)), ...d.raw.checkins.filter((c) => c.sample).map((c) => del('checkins', c.id))];
+}
+
+// ---------- ordering ----------
+/** `order` for a record added after every other one. Missing or invalid orders from older data count as 0. */
+export const nextOrder = (list: { order: number }[]): number => Math.max(0, ...list.map((r) => (Number.isFinite(r.order) ? r.order : 0))) + 1;
+
+/**
+ * Move a body part one place up (-1) or down (1) in `sorted`, which is `Data.bodyPartsSorted`.
+ * A part moves only within its Library section: tracking among tracking, inactive among inactive.
+ * The whole list, inactive parts included, is renumbered 1..n, which also repairs duplicate or
+ * missing orders from older data. Only records whose `order` changes are written, so a move
+ * between tidy neighbours writes two records. Returns no ops when the part can't move.
+ */
+export function opsMoveBodyPart(sorted: BodyPart[], id: string, dir: -1 | 1): Op[] {
+  const i = sorted.findIndex((b) => b.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= sorted.length || !sorted[i].active !== !sorted[j].active) return [];
+  const list = [...sorted];
+  [list[i], list[j]] = [list[j], list[i]];
+  return list.flatMap((b, k) => (b.order === k + 1 ? [] : [put('bodyParts', { ...b, order: k + 1 })]));
 }

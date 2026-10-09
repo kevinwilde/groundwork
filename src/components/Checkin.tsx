@@ -7,7 +7,7 @@ import type { Checkin } from '../db/types';
 import { feelingColor, painColor } from '../lib/colors';
 import { fmtShort, fmtTime, nowTime, relDay, today, type DateStr } from '../lib/dates';
 import { uid } from '../lib/ids';
-import { FEELINGS, latestPain, MOMENTS } from '../lib/model';
+import { FEELINGS, latestPain, MOMENTS, painsOf } from '../lib/model';
 import { Modal } from './Modal';
 import { notify, save, saveWithUndo } from './toast';
 import { Badge, Button, Field, FormError, IconButton, Segmented, vars } from './ui';
@@ -214,7 +214,7 @@ export function CheckinDialog({ checkin, date, onClose }: { checkin?: Checkin; d
 export function CheckinCard({ checkin: c, showDate, onEdit }: { checkin: Checkin; showDate?: boolean; onEdit?: () => void }) {
   const d = useData();
   const feeling = FEELINGS.find((f) => f.v === c.overall);
-  const pains = c.pains.map((p) => ({ ...p, bp: d.bodyParts.get(p.bodyPartId) })).filter((p) => p.bp);
+  const pains = painsOf(d, c);
   return (
     <div className="checkin-card">
       <div className="checkin-head">
@@ -236,10 +236,10 @@ export function CheckinCard({ checkin: c, showDate, onEdit }: { checkin: Checkin
       </div>
       {pains.length > 0 && (
         <div className="pain-chips">
-          {pains.map((p) => (
-            <span key={p.bodyPartId} className={clsx('pain-chip', !p.bp!.active && 'inactive')} style={vars({ '--c': painColor(p.score) })}>
-              <b>{p.score}</b>
-              {p.bp!.name}
+          {pains.map(({ bp, score }) => (
+            <span key={bp.id} className={clsx('pain-chip', !bp.active && 'inactive')} style={vars({ '--c': painColor(score) })}>
+              <b>{score}</b>
+              {bp.name}
             </span>
           ))}
         </div>

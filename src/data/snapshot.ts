@@ -28,6 +28,10 @@ export interface Data {
   tagsSorted: Tag[];
   /** Not archived, sorted by name. */
   exercisesSorted: Exercise[];
+  /**
+   * The Library order: tracking parts, then inactive ones, each by `order` and then name.
+   * Every list of body parts follows it, so they all match the Library page.
+   */
   bodyPartsSorted: BodyPart[];
   snacksSorted: Snack[];
   sessionsSorted: SavedSession[];
@@ -84,7 +88,7 @@ export function buildData(raw: RawData): Data {
     typesSorted: [...raw.types].sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || byName(a, b)),
     tagsSorted: [...raw.tags].sort(byName),
     exercisesSorted: raw.exercises.filter((e) => !e.archived).sort(byName),
-    bodyPartsSorted: [...raw.bodyParts].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || byName(a, b)),
+    bodyPartsSorted: [...raw.bodyParts].sort((a, b) => Number(!a.active) - Number(!b.active) || (a.order ?? 0) - (b.order ?? 0) || byName(a, b)),
     snacksSorted: [...raw.snacks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     sessionsSorted: [...raw.sessions].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || byName(a, b)),
     viewsSorted: [...raw.views].sort((a, b) => a.createdAt - b.createdAt),
