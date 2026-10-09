@@ -66,6 +66,28 @@ export function planProgress(plan: Plan): { done: number; skipped: number; total
 }
 
 /**
+ * A plan card's count: "9 sets", or "3 of 9 sets" once some are ticked. Only set-based exercises
+ * count, since a run isn't a set; a plan of runs alone gets no count ('').
+ */
+export function setCountText(plan: Plan): string {
+  let done = 0;
+  let total = 0;
+  for (const item of plan.items) {
+    if (!isSetItem(item)) continue;
+    total += item.sets.length;
+    done += item.sets.filter((s) => s.done).length;
+  }
+  if (!total) return '';
+  const sets = total === 1 ? '1 set' : `${fmtNum(total)} sets`;
+  return done ? `${fmtNum(done)} of ${sets}` : sets;
+}
+
+/** "3 of 9 sets · Bench Press · Pull-up · Run" for Today and the day dialog; items for deleted exercises left out. */
+export function planLine(d: Data, plan: Plan): string {
+  return [setCountText(visiblePlan(d, plan)), ...planExercises(d, plan).map((x) => x.ex.name)].filter(Boolean).join(' · ');
+}
+
+/**
  * Done: finished, or every set ticked or skipped. In progress: some sets ticked. Missed: nothing
  * ticked and the date has passed. Planned: nothing ticked yet, today or later.
  */

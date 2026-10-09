@@ -10,7 +10,7 @@ import { applyTo, entry, library, liftItem, plan } from '../test/fixtures';
 import {
   blankPlan, bumpStep, bumpTargets, bumpText, changedFields, effortTarget, currentSet, dayLabel, daysToCopy, diffFromTarget, itemComplete, lastDone, missedPlans, opsAddExercise, opsAddSet,
   opsDeleteEntry, opsDeletePlan, opsDuplicatePlan, opsFinish, opsMovePlan, opsRemoveSet, opsReopen, opsSavePlan, opsSetNotes, opsSetTargets, opsSkipExercise, opsSkipSet,
-  opsTick, opsUntick, planExercises, planFromDay, planFromSession, planProgress, planShortfalls, planStatus, sameNamePlan, setLabel, setsSharingTarget, setsText, shortfall,
+  opsTick, opsUntick, planExercises, planFromDay, planFromSession, planLine, planProgress, setCountText, planShortfalls, planStatus, sameNamePlan, setLabel, setsSharingTarget, setsText, shortfall,
   upcomingPlans, visiblePlan, withTargets,
 } from './plans';
 
@@ -57,6 +57,17 @@ describe('status, progress and the current set', () => {
     expect(currentSet(plan('p', TODAY, [{ ...runItem, skipped: true }]))).toBeNull();
     expect(itemComplete({ ...runItem, skipped: true })).toBe(true);
   });
+  it('counts only set-based sets on plan cards', () => {
+    expect(setCountText(plan('p', TODAY, [bench()]))).toBe('3 sets');
+    expect(setCountText(plan('p', TODAY, [bench([{ target: set(5, 190), done: set(5, 190) }, { target: set(5, 190) }]), { ...runItem, done: { duration: 1490 } }]))).toBe('1 of 2 sets');
+    expect(setCountText(plan('p', TODAY, [bench([{ target: set(5, 190) }])]))).toBe('1 set');
+    // A plan of runs alone has no set count.
+    expect(setCountText(plan('p', TODAY, [runItem]))).toBe('');
+    const d = library();
+    expect(planLine(d, plan('p', TODAY, [runItem], { name: 'Evening run' }))).toBe('Run');
+    expect(planLine(d, plan('p', TODAY, [bench(), runItem, liftItem('pi_gone', 'ex_gone', [{ target: set(1, 1) }])]))).toBe('3 sets · Bench Press · Run');
+  });
+
   it('hides items whose exercise was deleted', () => {
     const d = library();
     const p = plan('p', TODAY, [bench(), liftItem('pi_gone', 'ex_gone', [{ target: set(1, 1) }])]);

@@ -2,8 +2,7 @@ import clsx from 'clsx';
 import { useData } from '../../data/DataProvider';
 import { useToday } from '../../data/hooks';
 import type { Plan } from '../../db/types';
-import { plural } from '../../lib/format';
-import { dayLabel, planExercises, planProgress, planStatus, STATUS_LABEL, visiblePlan, type PlanStatus } from '../../lib/plans';
+import { dayLabel, planExercises, planStatus, setCountText, STATUS_LABEL, visiblePlan, type PlanStatus } from '../../lib/plans';
 import { Button, IconButton } from '../ui';
 import { usePlanActions } from './usePlanActions';
 
@@ -21,8 +20,8 @@ export function PlanCard({ plan, showDate }: { plan: Plan; showDate?: boolean })
   const actions = usePlanActions();
   const vis = visiblePlan(d, plan);
   const status = planStatus(vis, t);
-  const progress = planProgress(vis);
   const names = planExercises(d, plan).map((x) => x.ex.name);
+  const meta = [showDate ? dayLabel(plan.date, t) : '', setCountText(vis)].filter(Boolean).join(' · ');
   return (
     <article className={clsx('plan-card', status)} aria-label={`${plan.name}, ${STATUS_LABEL[status]}`}>
       <div className="plan-card-head">
@@ -30,11 +29,7 @@ export function PlanCard({ plan, showDate }: { plan: Plan; showDate?: boolean })
         <StatusChip status={status} />
       </div>
       <div className="plan-card-list">{names.length ? names.join(' · ') : 'No exercises yet'}</div>
-      <div className="plan-card-meta">
-        {showDate && <span>{dayLabel(plan.date, t)} · </span>}
-        {plural(progress.total, 'set')}
-        {progress.done > 0 && ` · ${progress.done} done`}
-      </div>
+      {meta && <div className="plan-card-meta">{meta}</div>}
       <div className="plan-card-actions">
         {plan.date <= t && (
           <Button size="sm" kind={status === 'done' ? 'default' : 'primary'} onClick={() => void actions.start(plan)}>

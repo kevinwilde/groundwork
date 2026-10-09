@@ -3,9 +3,8 @@ import { useData } from '../../data/DataProvider';
 import { useToday } from '../../data/hooks';
 import type { Entry } from '../../db/types';
 import { fmtLong, relDay, type DateStr } from '../../lib/dates';
-import { plural } from '../../lib/format';
 import { checkinsOn, entriesOn } from '../../lib/model';
-import { planExercises, planProgress, planStatus, visiblePlan } from '../../lib/plans';
+import { planLine, planStatus, visiblePlan } from '../../lib/plans';
 import { CheckinCard, CheckinDialog } from '../Checkin';
 import { EntryRow } from '../EntryRow';
 import { Modal, useModals } from '../Modal';
@@ -76,15 +75,11 @@ export function DayDialog({ date, match, colorOf, onClose }: Props) {
               {plans.map((p) => {
                 const vis = visiblePlan(d, p);
                 const status = planStatus(vis, t);
-                const progress = planProgress(vis);
                 return (
                   <div className="plan-today-row" key={p.id}>
                     <div className="plan-today-text">
                       <span className="plan-card-name">{p.name}</span>
-                      <span className="muted small">
-                        {progress.done ? `${progress.done} of ${plural(progress.total, 'set')}` : plural(progress.total, 'set')}
-                        {planExercises(d, p).length > 0 && ` · ${planExercises(d, p).map((x) => x.ex.name).join(' · ')}`}
-                      </span>
+                      <span className="muted small">{planLine(d, p)}</span>
                     </div>
                     <StatusChip status={status} />
                     <span className="plan-day-actions">

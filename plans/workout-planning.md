@@ -266,6 +266,7 @@ Small additions the plan didn't spell out:
 
 - **Builders:** `opsRemoveSet`, `opsSetNotes` (the per-exercise note, copied into the entry) and `opsSavePlan` (the editor's save, which rewrites entries for exercises whose ticks, notes or date changed). `opsMovePlan` moves the plan's entries too, by rewriting them from the plan.
 - **`planProgress`** returns `{ done, skipped, total }`; the progress bar counts skipped sets as dealt with.
+- **Set counts on plan cards** (Plans page, Today, day dialog) count only set-based sets, as "9 sets" or "3 of 9 sets"; a plan of runs alone shows no count. The workout screen's progress still counts a run as one.
 - **Duplicate** also drops skips, per-exercise notes (they're about that day) and items for deleted exercises.
 - **Calendar page:** a **Plans** button in its header, so the Plans page is reached from the calendar as well as from the day dialog's plan list.
 

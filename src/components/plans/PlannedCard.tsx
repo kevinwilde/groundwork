@@ -3,8 +3,7 @@ import { useData } from '../../data/DataProvider';
 import { useToday } from '../../data/hooks';
 import type { Data } from '../../data/snapshot';
 import { addDays, type DateStr } from '../../lib/dates';
-import { plural } from '../../lib/format';
-import { dayLabel, missedPlans, planExercises, planProgress, planStatus, upcomingPlans, visiblePlan } from '../../lib/plans';
+import { dayLabel, missedPlans, planLine, planStatus, upcomingPlans, visiblePlan } from '../../lib/plans';
 import { Button, SectionHead } from '../ui';
 import { startLabel, StatusChip } from './PlanCard';
 import { onDay, usePlanActions } from './usePlanActions';
@@ -40,15 +39,11 @@ export function PlannedCard() {
           {todays.map((p) => {
             const vis = visiblePlan(d, p);
             const status = planStatus(vis, t);
-            const progress = planProgress(vis);
             return (
               <div className="plan-today-row" key={p.id}>
                 <div className="plan-today-text">
                   <span className="plan-card-name">{p.name}</span>
-                  <span className="muted small">
-                    {progress.done ? `${progress.done} of ${plural(progress.total, 'set')}` : plural(progress.total, 'set')}
-                    {planExercises(d, p).length > 0 && ` · ${planExercises(d, p).map((x) => x.ex.name).join(' · ')}`}
-                  </span>
+                  <span className="muted small">{planLine(d, p)}</span>
                 </div>
                 {status === 'done' && <StatusChip status={status} />}
                 <Button kind={status === 'done' ? 'default' : 'primary'} onClick={() => void actions.start(p)}>
