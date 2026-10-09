@@ -218,13 +218,13 @@ The workout is phone-first and laid out for one thumb.
 
 ### 4. Workout screen
 
-- [ ] Set rows with tick and untick that save immediately.
+- [x] Set rows with tick and untick that save immediately.
 - [ ] Inline set editor with steppers.
 - [ ] The "Use it for sets 3–4 too?" prompt.
 - [ ] Add/skip set, skip/add exercise.
 - [ ] Single-effort rows.
-- [ ] Current-set highlight and scroll.
-- [ ] Live-region announcements.
+- [x] Current-set highlight and scroll.
+- [x] Live-region announcements.
 - [ ] Finish summary and reopen.
 
 ### 5. Entry points

@@ -2965,6 +2965,164 @@ code {
   }
 }
 
+/* ---------- workout ---------- */
+/* Phone-first, for one thumb: big rows, a 44 × 44 tick on the right. */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.wk-status {
+  gap: 10px;
+}
+.wk-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wk-progress-text {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.wk-progress-text b {
+  font: 700 22px/1 var(--font-display);
+  color: var(--ink);
+}
+.wk-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+.wk-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--good);
+  transition: width 0.25s ease-out;
+}
+.wk-when {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  font-size: 14px;
+}
+.wk-block {
+  gap: 10px;
+}
+.wk-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wk-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 6px 6px 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  scroll-margin: 16px;
+}
+.wk-set.current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.wk-set.done {
+  background: color-mix(in srgb, var(--good) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--good) 30%, var(--line));
+}
+.wk-set.skipped {
+  background: transparent;
+  border-style: dashed;
+}
+.wk-set-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.wk-set-main {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.wk-set-text {
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.wk-set.done .set-n {
+  background: color-mix(in srgb, var(--good) 22%, var(--surface));
+  color: color-mix(in srgb, var(--good) 75%, var(--ink));
+}
+.wk-was {
+  color: var(--ink-3);
+  font-weight: 500;
+  text-decoration-thickness: 1.5px;
+}
+.wk-skipped-val {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.wk-tick {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  color: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s, border-color 0.12s, transform 0.08s;
+}
+.wk-tick:hover {
+  border-color: var(--good);
+  color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+.wk-tick:active {
+  transform: scale(0.94);
+}
+.wk-set.current .wk-tick {
+  border-color: var(--accent);
+}
+.wk-set.done .wk-tick {
+  border-color: var(--good);
+  background: var(--good);
+  color: var(--surface);
+}
+.wk-set.skipped .wk-tick {
+  border-style: dashed;
+  color: var(--ink-3);
+}
+@media (max-width: 899px) {
+  /* Keep the current set clear of the fixed tab bar when it scrolls into view. */
+  .wk-set {
+    scroll-margin-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ---------- motion ---------- */
 @keyframes fade-in {
   from {

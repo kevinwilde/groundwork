@@ -399,15 +399,21 @@ export function opsSetNotes(d: Data, plan: Plan, itemKey: string, notes: string,
 export const opsFinish = (plan: Plan, now = Date.now()): Op[] => [put('plans', { ...plan, finishedAt: now })];
 export const opsReopen = (plan: Plan): Op[] => [put('plans', { ...plan, finishedAt: null })];
 
-/** Move a plan to another day, after that day's plans. Its logged entries move with it. */
-export function opsMovePlan(d: Data, plan: Plan, date: DateStr): Op[] {
+/**
+ * Move a plan to another day, after that day's plans. Its logged entries move with it: they're
+ * rewritten from the plan, so this works even before the snapshot has caught up with the last tick.
+ */
+export function opsMovePlan(d: Data, plan: Plan, date: DateStr, now = Date.now()): Op[] {
   if (date === plan.date) return [];
-  const order = nextOrder((d.plansByDate.get(date) ?? []).filter((p) => p.id !== plan.id));
-  const entries = plan.items.flatMap((item) => {
-    const e = entryOf(d, item);
-    return e ? [put('entries', { ...e, date })] : [];
+  const moved: Plan = { ...plan, date, order: nextOrder((d.plansByDate.get(date) ?? []).filter((p) => p.id !== plan.id)) };
+  const ops: Op[] = [];
+  const items = moved.items.map((item) => {
+    if (!item.entryId && !tickedDone(item).length) return item;
+    const synced = syncEntry(d, moved, item, now);
+    ops.push(...synced.ops);
+    return synced.item;
   });
-  return [put('plans', { ...plan, date, order }), ...entries];
+  return [put('plans', { ...moved, items }), ...ops];
 }
 
 /** A copy of the plan on another day: targets only. No ticks, skips, notes per exercise, entries or finish. */
