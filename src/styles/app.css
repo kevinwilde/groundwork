@@ -3257,6 +3257,52 @@ button.wk-set-main {
 .wk-foot .input {
   min-height: 44px;
 }
+.wk-finish {
+  align-self: stretch;
+  height: 52px;
+  font-size: 16px;
+}
+.wk-done {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.wk-done-title {
+  font: 700 28px/1 var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--good);
+}
+.wk-done-title:focus {
+  outline: none;
+}
+.wk-done-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.wk-done-count {
+  font-size: 16px;
+  color: var(--ink-2);
+}
+.wk-done-count b {
+  font: 700 24px/1 var(--font-display);
+  color: var(--ink);
+}
+.wk-misses {
+  margin: 0;
+  padding-left: 20px;
+}
+.wk-done-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wk-done-actions .btn {
+  min-height: 44px;
+}
 @media (max-width: 899px) {
   /* Keep the current set clear of the fixed tab bar when it scrolls into view. */
   .wk-set {
@@ -3267,8 +3313,7 @@ button.wk-set-main {
     height: 44px;
   }
   .wk-block .btn.sm,
-  .wk-status .btn.sm,
-  .page-head .btn.sm {
+  .page-head .btn {
     height: 44px;
   }
 }

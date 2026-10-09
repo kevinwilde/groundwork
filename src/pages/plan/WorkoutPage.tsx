@@ -14,8 +14,8 @@ import { fmtDate, fmtLong, fmtShort } from '../../lib/dates';
 import { plural } from '../../lib/format';
 import { exerciseColor, fieldText, hasValue, summarize, summarizeEntry, typeOf } from '../../lib/model';
 import {
-  bumpStep, changedFields, currentSet, diffFromTarget, isSetItem, itemComplete, lastDone, opsAddExercise, opsAddSet, opsMovePlan, opsRemoveSet, opsSetNotes, opsSetTargets,
-  opsSkipExercise, opsSkipSet, opsTick, opsUntick, planExercises, planProgress, planStatus, setLabel, setsSharingTarget, setsText, slotsOf, visiblePlan,
+  bumpStep, changedFields, currentSet, diffFromTarget, isSetItem, itemComplete, lastDone, opsAddExercise, opsAddSet, opsFinish, opsMovePlan, opsRemoveSet, opsReopen, opsSetNotes,
+  opsSetTargets, opsSkipExercise, opsSkipSet, opsTick, opsUntick, planExercises, planProgress, planShortfalls, planStatus, setLabel, setsSharingTarget, setsText, slotsOf, visiblePlan,
 } from '../../lib/plans';
 
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -82,6 +82,9 @@ function Workout({ plan }: { plan: Plan }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [addId, setAddId] = useState('');
   const scrollNext = useRef(false);
+  const summaryHead = useRef<HTMLHeadingElement>(null);
+  const showSummary = useRef(false);
+  const finished = !!plan.finishedAt;
 
   const vis = visiblePlan(d, plan);
   const progress = planProgress(vis);
@@ -89,6 +92,7 @@ function Workout({ plan }: { plan: Plan }) {
   const current = currentSet(vis);
   const currentKey = current ? `${current.itemKey}:${current.index}` : '';
   const exercises = planExercises(d, plan);
+  const shortfalls = finished ? planShortfalls(d, vis) : [];
   const announce = (text: string) => setSaid((s) => ({ n: s.n + 1, text }));
 
   // After a tick, bring the next set into view (once the saved plan is back).
@@ -101,6 +105,14 @@ function Workout({ plan }: { plan: Plan }) {
     // The tick that had focus may have gone with a collapsed exercise: carry on from the next set.
     if (!document.activeElement || document.activeElement === document.body) row?.querySelector<HTMLElement>('.wk-tick')?.focus({ preventScroll: true });
   }, [currentKey, plan]);
+
+  // After Finish, move to the summary that replaces the button.
+  useEffect(() => {
+    if (!finished || !showSummary.current) return;
+    showSummary.current = false;
+    summaryHead.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    summaryHead.current?.focus({ preventScroll: true });
+  }, [finished]);
 
   const toggle = (key: string) =>
     setExpanded((s) => {
@@ -176,6 +188,15 @@ function Workout({ plan }: { plan: Plan }) {
     setAddId('');
     void write((p, data) => opsAddExercise(data, p, ex.id)).then((ok) => ok && announce(`${ex.name} added`));
   }
+
+  function finish() {
+    setEditing(null);
+    setPrompt(null);
+    showSummary.current = true;
+    void write((p) => opsFinish(p)).then((ok) => ok && announce('Workout finished'));
+  }
+
+  const reopen = () => void write((p) => opsReopen(p)).then((ok) => ok && announce('Workout reopened'));
 
   function untick(item: PlanItem, ex: Exercise, index: number) {
     if (prompt?.itemKey === item.key) setPrompt(null);
@@ -328,6 +349,41 @@ function Workout({ plan }: { plan: Plan }) {
             Add
           </Button>
         </div>
+        {finished ? (
+          <div className="wk-done" aria-labelledby={`wk-done-${plan.id}`}>
+            <h2 className="wk-done-title" id={`wk-done-${plan.id}`} ref={summaryHead} tabIndex={-1}>
+              Workout finished
+            </h2>
+            <p className="wk-done-count">
+              <b>{progress.done}</b> of {plural(progress.total, 'set')} done
+              {progress.skipped > 0 && ` · ${progress.skipped} skipped`}
+            </p>
+            {shortfalls.length ? (
+              <>
+                <p className="muted small">Short of the target:</p>
+                <ul className="wk-misses">
+                  {shortfalls.map((s) => (
+                    <li key={s.ex.id}>
+                      <b>{s.ex.name}</b>: {s.text}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>Every exercise hit its target.</p>
+            )}
+            <div className="wk-done-actions">
+              <Button onClick={reopen}>Reopen</Button>
+              <Button kind="primary" icon="check" onClick={() => navigate('/')}>
+                Done
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button kind="primary" icon="check" className="wk-finish" onClick={finish}>
+            Finish
+          </Button>
+        )}
       </section>
 
       <div className="visually-hidden" role="status" aria-live="polite">

@@ -225,7 +225,7 @@ The workout is phone-first and laid out for one thumb.
 - [x] Single-effort rows.
 - [x] Current-set highlight and scroll.
 - [x] Live-region announcements.
-- [ ] Finish summary and reopen.
+- [x] Finish summary and reopen.
 
 ### 5. Entry points
 
