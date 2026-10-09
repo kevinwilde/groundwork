@@ -231,7 +231,7 @@ The workout is phone-first and laid out for one thumb.
 
 - [x] Today: the Planned card.
 - [x] Calendar: dashed outlines and the plan list in the day dialog.
-- [ ] Log: **Plan for later**, and **Start workout** in `SessionLogger`.
+- [x] Log: **Plan for later**, and **Start workout** in `SessionLogger`.
 
 ### 6. Docs and verification
 

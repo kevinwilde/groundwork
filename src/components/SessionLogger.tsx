@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useId, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useData } from '../data/DataProvider';
 import { put } from '../data/ops';
@@ -8,6 +9,7 @@ import { fmtShort, relDay, type DateStr } from '../lib/dates';
 import { plural } from '../lib/format';
 import { uid } from '../lib/ids';
 import { typeOf } from '../lib/model';
+import { planFromSession } from '../lib/plans';
 import { prefill, sessionExercises, sessionRuns, type PrefillSource } from '../lib/sessions';
 import { SessionDialog } from './dialogs/SessionDialog';
 import { EntryEditor, type EntryEditorHandle } from './EntryEditor';
@@ -50,6 +52,7 @@ function sourceText(source: PrefillSource, session: SavedSession, ex: Exercise):
 export function SessionLogger({ session, date, onDone, onCancel }: Props) {
   const d = useData();
   const modals = useModals();
+  const navigate = useNavigate();
   const id = useId();
   const editors = useRef(new Map<string, EntryEditorHandle | null>());
   const blockEls = useRef(new Map<string, HTMLElement | null>());
@@ -76,6 +79,12 @@ export function SessionLogger({ session, date, onDone, onCancel }: Props) {
     const p = prefill(d, session, { exerciseId: addId }, date);
     setBlocks((bs) => [...bs, { key: uid('blk'), exerciseId: addId, include: true, initial: p.perf, source: p.source, extra: true }]);
     setAddId('');
+  }
+
+  /** Follow the session live instead: a plan for this date with the same prefill as Log all, opened on the workout screen. */
+  async function startWorkout() {
+    const plan = planFromSession(d, session, date);
+    if (await save([put('plans', plan)])) navigate(`/plan/${plan.id}`);
   }
 
   async function logAll() {
@@ -113,9 +122,14 @@ export function SessionLogger({ session, date, onDone, onCancel }: Props) {
             {runs.length ? `Logged ${plural(runs.length, 'time')} · last ${relDay(runs[0].date)}` : 'First time logging this session'}
           </div>
         </div>
-        <Button size="sm" kind="ghost" icon="edit" onClick={() => modals.open((close) => <SessionDialog session={session} onClose={close} />)}>
-          Edit session
-        </Button>
+        <span className="row gap-xs wrap">
+          <Button size="sm" icon="check" onClick={() => void startWorkout()} title="Tick off each set as you go; every tick is saved">
+            Start workout
+          </Button>
+          <Button size="sm" kind="ghost" icon="edit" onClick={() => modals.open((close) => <SessionDialog session={session} onClose={close} />)}>
+            Edit session
+          </Button>
+        </span>
       </div>
       {session.notes && <p className="session-notes">{session.notes}</p>}
       {loggedToday && <p className="session-warn">You already logged {session.name} on this day. Logging again adds a second set of entries.</p>}
