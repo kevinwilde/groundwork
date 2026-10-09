@@ -8,7 +8,7 @@ import { libraryOps, STARTER_TYPES } from '../db/seed';
 import type { Entry, ExerciseType, Plan, PlannedSet, SavedSession } from '../db/types';
 import { applyTo, entry, library, liftItem, plan } from '../test/fixtures';
 import {
-  blankPlan, bumpStep, bumpTargets, changedFields, effortTarget, currentSet, dayLabel, daysToCopy, diffFromTarget, itemComplete, lastDone, missedPlans, opsAddExercise, opsAddSet,
+  blankPlan, bumpStep, bumpTargets, bumpText, changedFields, effortTarget, currentSet, dayLabel, daysToCopy, diffFromTarget, itemComplete, lastDone, missedPlans, opsAddExercise, opsAddSet,
   opsDeleteEntry, opsDeletePlan, opsDuplicatePlan, opsFinish, opsMovePlan, opsRemoveSet, opsReopen, opsSavePlan, opsSetNotes, opsSetTargets, opsSkipExercise, opsSkipSet,
   opsTick, opsUntick, planExercises, planFromDay, planFromSession, planProgress, planShortfalls, planStatus, sameNamePlan, setLabel, setsSharingTarget, setsText, shortfall,
   upcomingPlans, visiblePlan, withTargets,
@@ -141,6 +141,9 @@ describe('targets', () => {
     expect(bumpTargets(lift, [set(5, 190), { reps: 5 }, set(3, 102.5)], 5)).toEqual([set(5, 195), { reps: 5 }, set(3, 107.5)]);
     expect(bumpTargets(lift, [set(5, 0.1)], 0.2)).toEqual([set(5, 0.3)]);
     expect(bumpTargets(bw, [{ reps: 5 }], 5)).toEqual([{ reps: 5 }]);
+    expect(bumpText(lift, 5)).toEqual({ amount: '5 lb', label: 'Add 5 lb to every set' });
+    expect(bumpText({ ...lift, fields: [lift.fields[0], { ...lift.fields[1], unit: 'kg' }] }, 2.5)).toEqual({ amount: '2.5 kg', label: 'Add 2.5 kg to every set' });
+    expect(bumpText({ ...lift, fields: [lift.fields[0], { ...lift.fields[1], unit: undefined }] }, 5).label).toBe('Add 5 to every set');
   });
   it('finds the fields that differ from the target', () => {
     expect(diffFromTarget({ target: set(5, 115), done: set(4, 115) })).toEqual(['reps']);

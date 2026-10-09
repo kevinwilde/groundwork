@@ -143,6 +143,13 @@ export function bumpStep(type: ExerciseType): number | null {
   return /^kgs?$/i.test(w.unit ?? '') ? 2.5 : 5;
 }
 
+/** The +5 lb chip's amount, "5 lb" or "2.5 kg", and its accessible name: "Add 2.5 kg to every set". */
+export function bumpText(type: ExerciseType, step: number): { amount: string; label: string } {
+  const unit = type.fields.find((f) => f.key === 'weight')?.unit;
+  const amount = `${fmtNum(step)}${unit ? ` ${unit}` : ''}`;
+  return { amount, label: `Add ${amount} to every set` };
+}
+
 /** Every set's weight up by `step`. Sets without a weight are left alone. */
 export function bumpTargets(type: ExerciseType, sets: SetValues[], step: number): SetValues[] {
   if (!type.fields.some((f) => f.key === 'weight')) return sets.map((s) => ({ ...s }));

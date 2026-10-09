@@ -11,7 +11,7 @@ import type { Performance, Plan, PlanItem } from '../../db/types';
 import { fmtDate, fmtLong, fmtShort, isDateStr, type DateStr } from '../../lib/dates';
 import { plural } from '../../lib/format';
 import { nextOrder, summarizeEntry, typeOf } from '../../lib/model';
-import { blankPlan, bumpStep, bumpTargets, isSetItem, itemFor, lastDone, opsSavePlan, planFromDay, planFromSession, planProgress, sameNamePlan, withTargets } from '../../lib/plans';
+import { blankPlan, bumpStep, bumpTargets, bumpText, isSetItem, itemFor, lastDone, opsSavePlan, planFromDay, planFromSession, planProgress, sameNamePlan, withTargets } from '../../lib/plans';
 
 /** `#/plan/new?date=…&from=session:<id>|day:<date>|blank` and `#/plan/<id>/edit`. */
 export function PlanEditorPage() {
@@ -211,8 +211,8 @@ function PlanEditor({ make, existing = false }: { make: () => Plan; existing?: b
                 />
                 {step && (
                   <div>
-                    <Button size="sm" kind="ghost" icon="plus" onClick={() => bump(b, step)} title={`Add ${step} to every set's weight`}>
-                      {step} {type.fields.find((f) => f.key === 'weight')?.unit ?? ''}
+                    <Button size="sm" kind="ghost" icon="plus" onClick={() => bump(b, step)} aria-label={bumpText(type, step).label} title={bumpText(type, step).label}>
+                      {bumpText(type, step).amount}
                     </Button>
                   </div>
                 )}
