@@ -236,7 +236,7 @@ The workout is phone-first and laid out for one thumb.
 ### 6. Docs and verification
 
 - [x] README: the Plans section and the edge case of editing a plan's entry in History.
-- [ ] Typecheck, tests and build.
+- [x] Typecheck, tests and build.
 - [ ] Browser check at phone width (375 px) and desktop, light and dark:
   - plan three days ahead;
   - two plans on one day;
