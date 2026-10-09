@@ -32,6 +32,8 @@ interface Props {
   hideLast?: boolean;
   /** Show notes behind an "Add note" button to keep the editor short. */
   collapseNotes?: boolean;
+  /** Keep blank sets and allow no values at all, instead of asking for one (plan targets are optional). */
+  keepBlank?: boolean;
   onSubmit?: (res: EntryEditorResult) => void;
   ref?: Ref<EntryEditorHandle>;
 }
@@ -39,7 +41,7 @@ interface Props {
 const inputMode = (f: TypeField) => (f.kind === 'int' ? 'numeric' : f.kind === 'number' ? 'decimal' : 'text');
 const durationHint = (f: TypeField) => (f.kind === 'duration' ? (f.plain === 'min' ? 'mm:ss' : 'sec') : '');
 
-export function EntryEditor({ formId, exercise, initial, date, excludeId, mode = 'entry', hideLast, collapseNotes, onSubmit, ref }: Props) {
+export function EntryEditor({ formId, exercise, initial, date, excludeId, mode = 'entry', hideLast, collapseNotes, keepBlank = false, onSubmit, ref }: Props) {
   const d = useData();
   const type = typeOf(d, exercise);
   const fields = type.fields;
@@ -94,9 +96,9 @@ export function EntryEditor({ formId, exercise, initial, date, excludeId, mode =
           if (r.error) return fail(`Set ${i + 1}: ${r.error}`);
           if (r.value != null) s[fields[j].key] = r.value;
         }
-        if (Object.keys(s).length) sets.push(s);
+        if (Object.keys(s).length || keepBlank) sets.push(s);
       }
-      if (!sets.length) return fail('Enter at least one set.');
+      if (!sets.length && !keepBlank) return fail('Enter at least one set.');
       setError(null);
       return { perf: { sets }, notes: notes.trim() };
     }
@@ -106,7 +108,7 @@ export function EntryEditor({ formId, exercise, initial, date, excludeId, mode =
       if (r.error) return fail(r.error);
       if (r.value != null) values[f.key] = r.value;
     }
-    if (!Object.keys(values).length) return fail('Enter at least one value.');
+    if (!Object.keys(values).length && !keepBlank) return fail('Enter at least one value.');
     setError(null);
     return { perf: { values }, notes: notes.trim() };
   }

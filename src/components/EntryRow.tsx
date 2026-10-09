@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import { useData } from '../data/DataProvider';
-import { del } from '../data/ops';
 import type { Entry, Exercise } from '../db/types';
 import { fmtDate, fmtShort } from '../lib/dates';
 import { exerciseColor, summarizeEntry, tagsOf, typeOf } from '../lib/model';
+import { opsDeleteEntry } from '../lib/plans';
 import { EntryDialog } from './dialogs/EntryDialog';
 import { useModals } from './Modal';
 import { saveWithUndo } from './toast';
@@ -58,7 +58,7 @@ export function EntryRow({ entry, color, showTags, showDate, dim, readonly }: En
       {!readonly && (
         <div className="entry-actions">
           <IconButton icon="edit" size={16} label={`Edit ${ex.name}`} onClick={() => modals.open((close) => <EntryDialog entry={entry} onClose={close} />)} />
-          <IconButton icon="trash" size={16} label={`Delete ${ex.name}`} onClick={() => saveWithUndo([del('entries', entry.id)], `Deleted ${ex.name} on ${fmtDate(entry.date)}`)} />
+          <IconButton icon="trash" size={16} label={`Delete ${ex.name}`} onClick={() => saveWithUndo(opsDeleteEntry(d, entry), `Deleted ${ex.name} on ${fmtDate(entry.date)}`)} />
         </div>
       )}
     </div>

@@ -75,6 +75,8 @@ describe('merge convergence (two databases, no GitHub)', () => {
       // Both devices' own work arrived on the other: entries, tombstones and edits.
       expect([...a.set.values()].filter((v) => v.table === 'entries' && v.live).length).toBeGreaterThan(0);
       expect([...a.set.values()].some((v) => !v.live)).toBe(true);
+      // Plans were created, ticked and deleted along the way.
+      expect([...a.set.values()].some((v) => v.table === 'plans')).toBe(true);
       // Nothing left to do in either direction.
       expect(mergeSets(a.set, b.set, { stamp: () => 'x', now: wall }).local).toEqual([]);
       expect(mergeSets(b.set, a.set, { stamp: () => 'x', now: wall }).local).toEqual([]);

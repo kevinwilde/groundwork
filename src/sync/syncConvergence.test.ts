@@ -114,6 +114,7 @@ describe('sync convergence (three devices, one fake GitHub)', () => {
       for (const dev of devices) expect(setText((await readSyncSet(dev.db)).set), dev.name).toBe(setText(remote));
       expect(setText(remote)).toBe(setText(oracle));
       expect([...remote.values()].filter((v: Version) => v.table === 'entries' && v.live).length).toBeGreaterThan(5);
+      expect([...remote.values()].some((v: Version) => v.table === 'plans')).toBe(true);
 
       // Every commit's files parse, and no commit repeats its parent's tree.
       for (const c of fake.commits.values()) {

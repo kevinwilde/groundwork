@@ -68,6 +68,33 @@ describe('backup validation', () => {
     expect(parsed.backup.data.sessions[0].items[0]).toEqual({ exerciseId: 'ex_bench', sets: [{ reps: 8, weight: 115 }, { reps: 8, weight: 115 }, { reps: 8, weight: 115 }] });
     expect(parsed.backup.data.entries[0].sessionId).toBe('ses_upper_a');
   });
+  it('keeps plans and the plan on each entry', () => {
+    const plan = {
+      id: 'pl_1', date: '2026-10-11', name: 'Upper A', sessionId: 'ses_upper_a', notes: 'Easy day', order: 1, finishedAt: null, createdAt: 3,
+      items: [
+        { key: 'pi_a', exerciseId: 'ex_bench', notes: 'felt good', entryId: 'en1', sets: [{ target: { reps: 5, weight: 190 }, done: { reps: 5, weight: 190 } }, { target: { reps: 5, weight: 190 }, skipped: true }, { target: { reps: 5, weight: 190 }, added: true }] },
+        { key: 'pi_b', exerciseId: 'ex_run', notes: '', target: { duration: 1500, distance: 3 } },
+      ],
+    };
+    const raw = rawFromOps([
+      ...libraryOps(0),
+      put('plans', plan),
+      put('entries', { id: 'en1', exerciseId: 'ex_bench', date: '2026-10-11', notes: 'felt good', source: 'log', sessionId: 'ses_upper_a', planId: 'pl_1', createdAt: 4, sets: [{ reps: 5, weight: 190 }] }),
+    ]);
+    const back = parsed(JSON.stringify(buildBackup(raw)));
+    expect(back.data.plans).toEqual([plan]);
+    expect(back.data.entries[0].planId).toBe('pl_1');
+  });
+  it('imports a version 3 backup with no plans', () => {
+    const v3 = parsed(JSON.stringify({ app: 'groundwork', schema: 3, data: { entries: [{ id: 'en1', exerciseId: 'ex_bench', date: '2026-10-01', hlc: SEED_HLC }] } }));
+    expect(v3.data.plans).toEqual([]);
+    expect(v3.data.entries[0]).not.toHaveProperty('planId');
+  });
+  it('rejects a malformed plan and says where', () => {
+    const bad = parseBackup(JSON.stringify({ app: 'groundwork', schema: 4, data: { plans: [{ id: 'pl', date: '2026-10-11', name: 'X', items: [{ key: 'k', exerciseId: 'ex', sets: [{ target: 5 }] }] }] } }));
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.error).toMatch(/data\.plans\.0\.items\.0\.sets\.0\.target/);
+  });
   it('imports version 1 backups that have no sessions', () => {
     const v1 = parseBackup(JSON.stringify({ app: 'groundwork', schema: 1, data: { tags: [{ id: 't', name: 'core', color: '#2E9A55' }] } }));
     expect(v1.ok).toBe(true);
@@ -221,6 +248,30 @@ describe('backup format 3', () => {
 });
 
 describe('schema upgrade', () => {
+  it('opens a version 3 database as version 4 with an empty plans table, and finds plans by date', async () => {
+    const name = 'gw-upgrade-v3';
+    const v3 = new Dexie(name);
+    v3.version(1).stores({
+      types: 'id', tags: 'id, name', exercises: 'id, typeId, *tagIds', entries: 'id, date, exerciseId, snackId',
+      snacks: 'id', bodyParts: 'id', checkins: 'id, date', views: 'id', settings: 'key',
+    });
+    v3.version(2).stores({ entries: 'id, date, exerciseId, snackId, sessionId', sessions: 'id' });
+    v3.version(3).stores({ tombstones: 'id, deletedAt', meta: 'key' });
+    await v3.open();
+    await v3.table('entries').put({ id: 'en_old', exerciseId: 'ex_rdl', date: '2026-09-01', notes: '', source: 'log', createdAt: 1, hlc: SEED_HLC });
+    v3.close();
+
+    const v4 = new GroundworkDB(name);
+    await v4.open();
+    expect(v4.verno).toBe(4);
+    expect(await v4.entries.get('en_old')).toMatchObject({ exerciseId: 'ex_rdl' });
+    expect(await v4.plans.count()).toBe(0);
+    await v4.plans.put({ id: 'pl_1', date: '2026-10-11', name: 'Upper A', items: [], notes: '', order: 1, createdAt: 2 });
+    expect(await v4.plans.where('date').equals('2026-10-11').primaryKeys()).toEqual(['pl_1']);
+    v4.close();
+    await Dexie.delete(name);
+  });
+
   it('opens a version 1 database as the current version without losing data', async () => {
     const name = 'gw-upgrade-test';
     const v1 = new Dexie(name);
@@ -235,11 +286,12 @@ describe('schema upgrade', () => {
 
     const v2 = new GroundworkDB(name);
     await v2.open();
-    expect(v2.verno).toBe(3);
+    expect(v2.verno).toBe(4);
     expect(await v2.entries.get('en_old')).toMatchObject({ exerciseId: 'ex_rdl', sets: [{ reps: 6, weight: 95 }] });
     expect(await v2.settings.get('seeded')).toEqual({ key: 'seeded', value: true });
     expect(await v2.sessions.count()).toBe(0);
     expect(await v2.tombstones.count()).toBe(0);
+    expect(await v2.plans.count()).toBe(0);
     await v2.entries.put({ id: 'en_new', exerciseId: 'ex_bench', date: '2026-09-02', notes: '', source: 'log', sessionId: 'ses_x', createdAt: 2 });
     expect(await v2.entries.where('sessionId').equals('ses_x').count()).toBe(1);
     v2.close();

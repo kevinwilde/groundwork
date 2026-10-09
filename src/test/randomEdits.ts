@@ -2,9 +2,10 @@ import { applyOps, del, put, readAll, type Op } from '../data/ops';
 import { buildData, type Data } from '../data/snapshot';
 import { GroundworkDB } from '../db/db';
 import { libraryOps, sampleOps } from '../db/seed';
-import type { Checkin, Entry, Exercise } from '../db/types';
+import type { Checkin, Entry, Exercise, Plan } from '../db/types';
 import { addDays } from '../lib/dates';
 import { opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag } from '../lib/model';
+import { isOpen, isTicked, opsDeleteEntry, opsDeletePlan, opsDuplicatePlan, opsMovePlan, opsTick, opsUntick, planFromSession, slotsOf } from '../lib/plans';
 import { canonical } from '../sync/canonical';
 import { SEED_HLC } from '../sync/hlc';
 import type { SyncSet } from '../sync/merge';
@@ -23,6 +24,15 @@ export function rng(seed: number): Rng {
 export const pick = <T>(r: Rng, arr: readonly T[]): T | undefined => arr[Math.floor(r() * arr.length)];
 export const int = (r: Rng, lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1));
 const id = (r: Rng, prefix: string) => `${prefix}_${Math.floor(r() * 36 ** 8).toString(36)}`;
+
+/** The plan with seeded ids instead of random ones, so a failing run replays exactly. */
+const reId = (r: Rng, p: Plan): Plan => ({ ...p, id: id(r, 'pl'), items: p.items.map((i) => ({ ...i, key: id(r, 'pi') })) });
+
+/** A random set of a random plan that matches `want`, as [plan, item key, index]. */
+function pickSet(r: Rng, d: Data, want: (s: ReturnType<typeof slotsOf>[number]) => boolean): [Plan, string, number] | null {
+  const sets = d.raw.plans.flatMap((p) => p.items.flatMap((item) => slotsOf(item).flatMap((s, i): [Plan, string, number][] => (want(s) ? [[p, item.key, i]] : []))));
+  return pick(r, sets) ?? null;
+}
 
 /** A device database with the starter library (and optionally sample data), as bootstrap leaves it. */
 export async function seededDevice(name: string, { samples = false, today = '2026-10-07' } = {}): Promise<GroundworkDB> {
@@ -48,26 +58,27 @@ export function randomEdit(r: Rng, d: Data, now: number, today = '2026-10-07'): 
   let acc = 0;
   const is = (p: number) => roll < (acc += p);
 
-  if (is(0.26)) {
+  if (is(0.18)) {
     const ex = pick(r, exercises);
     if (!ex) return null;
     const e: Entry = { id: id(r, 'en'), exerciseId: ex.id, date: addDays(today, -int(r, 0, 45)), notes: '', source: 'log', sets: [{ reps: int(r, 1, 12), weight: int(r, 0, 60) * 5 }], createdAt: now };
     return [put('entries', e)];
   }
-  if (is(0.12)) {
+  if (is(0.09)) {
     const e = pick(r, mine);
     return e ? [put('entries', { ...e, notes: `note ${int(r, 0, 99)}`, sets: [{ reps: int(r, 1, 12) }] })] : null;
   }
   if (is(0.08)) {
+    // Deleting a plan's entry also clears its ticks.
     const e = pick(r, mine);
-    return e ? [del('entries', e.id)] : null;
+    return e ? opsDeleteEntry(d, e) : null;
   }
-  if (is(0.08)) {
+  if (is(0.06)) {
     const parts = d.raw.bodyParts.filter(() => r() < 0.7);
     const c: Checkin = { id: id(r, 'ci'), date: addDays(today, -int(r, 0, 30)), time: '07:30', moment: 'Morning', overall: int(r, 1, 5), notes: '', pains: parts.map((b) => ({ bodyPartId: b.id, score: int(r, 0, 10) })), createdAt: now };
     return [put('checkins', c)];
   }
-  if (is(0.08)) {
+  if (is(0.07)) {
     const ex = pick(r, exercises);
     if (!ex) return null;
     const tags = d.raw.tags.filter(() => r() < 0.25).map((t) => t.id);
@@ -106,6 +117,35 @@ export function randomEdit(r: Rng, d: Data, now: number, today = '2026-10-07'): 
     // A dialog saved without changes.
     const ex = pick(r, exercises);
     return ex ? [put('exercises', { ...ex, updatedAt: now })] : null;
+  }
+  if (is(0.04)) {
+    const s = pick(r, d.raw.sessions);
+    return s ? [put('plans', reId(r, planFromSession(d, s, addDays(today, int(r, -3, 14)), now)))] : null;
+  }
+  if (is(0.05)) {
+    // Tick a set as planned, or with what was actually done.
+    const found = pickSet(r, d, isOpen);
+    if (!found) return null;
+    const [p, key, i] = found;
+    const withId = { ...p, items: p.items.map((item) => (item.key === key && !item.entryId ? { ...item, entryId: id(r, 'en') } : item)) };
+    const ops = opsTick(d, withId, key, i, r() < 0.5 ? undefined : { reps: int(r, 1, 12), weight: int(r, 0, 60) * 5 }, now);
+    return ops.length ? ops : null;
+  }
+  if (is(0.02)) {
+    const found = pickSet(r, d, isTicked);
+    return found ? opsUntick(d, found[0], found[1], found[2], now) : null;
+  }
+  if (is(0.015)) {
+    const p = pick(r, d.raw.plans);
+    return p ? opsDeletePlan(p) : null;
+  }
+  if (is(0.015)) {
+    const p = pick(r, d.raw.plans);
+    if (!p) return null;
+    const date = addDays(today, int(r, -2, 10));
+    if (r() < 0.5) return opsMovePlan(d, p, date);
+    const [copy] = opsDuplicatePlan(d, p, date, now);
+    return copy.type === 'put' && copy.table === 'plans' ? [put('plans', reId(r, copy.value))] : null;
   }
   const s = pick(r, d.raw.sessions);
   return s ? [put('sessions', { ...s, notes: `notes ${int(r, 0, 99)}` })] : null;

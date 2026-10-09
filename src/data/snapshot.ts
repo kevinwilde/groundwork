@@ -1,4 +1,4 @@
-import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, SavedSession, SavedView, Setting, Snack, Tag } from '../db/types';
+import type { BodyPart, Checkin, Entry, Exercise, ExerciseType, Plan, SavedSession, SavedView, Setting, Snack, Tag } from '../db/types';
 import type { DateStr } from '../lib/dates';
 
 export interface RawData {
@@ -8,6 +8,7 @@ export interface RawData {
   entries: Entry[];
   snacks: Snack[];
   sessions: SavedSession[];
+  plans: Plan[];
   bodyParts: BodyPart[];
   checkins: Checkin[];
   views: SavedView[];
@@ -22,6 +23,7 @@ export interface Data {
   exercises: Map<string, Exercise>;
   snacks: Map<string, Snack>;
   sessions: Map<string, SavedSession>;
+  plans: Map<string, Plan>;
   bodyParts: Map<string, BodyPart>;
   settings: Map<string, unknown>;
   typesSorted: ExerciseType[];
@@ -43,10 +45,12 @@ export interface Data {
   /** Newest first. */
   entriesBySession: Map<string, Entry[]>;
   checkinsByDate: Map<DateStr, Checkin[]>;
+  /** Each day's plans in the order they were added: by `order`, then `createdAt`. */
+  plansByDate: Map<DateStr, Plan[]>;
   weekStart: 0 | 1;
 }
 
-export const EMPTY_RAW: RawData = { types: [], tags: [], exercises: [], entries: [], snacks: [], sessions: [], bodyParts: [], checkins: [], views: [], settings: [] };
+export const EMPTY_RAW: RawData = { types: [], tags: [], exercises: [], entries: [], snacks: [], sessions: [], plans: [], bodyParts: [], checkins: [], views: [], settings: [] };
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
@@ -74,6 +78,8 @@ export function buildData(raw: RawData): Data {
   for (const list of entriesBySession.values()) list.sort(newestFirst);
   const checkinsByDate = group(raw.checkins, (c) => c.date);
   for (const list of checkinsByDate.values()) list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const plansByDate = group(raw.plans, (p) => p.date);
+  for (const list of plansByDate.values()) list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1));
   const ws = settings.get('weekStart');
 
   return {
@@ -83,6 +89,7 @@ export function buildData(raw: RawData): Data {
     exercises: new Map(raw.exercises.map((e) => [e.id, e])),
     snacks: new Map(raw.snacks.map((s) => [s.id, s])),
     sessions: new Map(raw.sessions.map((s) => [s.id, s])),
+    plans: new Map(raw.plans.map((p) => [p.id, p])),
     bodyParts: new Map(raw.bodyParts.map((b) => [b.id, b])),
     settings,
     typesSorted: [...raw.types].sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || byName(a, b)),
@@ -97,6 +104,7 @@ export function buildData(raw: RawData): Data {
     entriesBySnack: group(raw.entries, (e) => e.snackId),
     entriesBySession,
     checkinsByDate,
+    plansByDate,
     weekStart: ws === 1 ? 1 : 0,
   };
 }

@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DayDialog } from '../components/dialogs/DayDialog';
 import { ExerciseDialog } from '../components/dialogs/ExerciseDialog';
 import { SessionDialog } from '../components/dialogs/SessionDialog';
@@ -42,6 +42,7 @@ export function LogPage() {
   const d = useData();
   const t = useToday();
   const modals = useModals();
+  const navigate = useNavigate();
   const id = useId();
   const [params, setParams] = useSearchParams();
   const paramDate = params.get('date');
@@ -196,9 +197,14 @@ export function LogPage() {
             <div className="picker-group">
               <div className="picker-label-row">
                 <span className="picker-label">Sessions</span>
-                <Button size="sm" kind="ghost" icon="plus" onClick={() => newSession()}>
-                  New session
-                </Button>
+                <span className="row gap-xs">
+                  <Button size="sm" kind="ghost" icon="calendar" onClick={() => navigate('/plan')}>
+                    Plan for later
+                  </Button>
+                  <Button size="sm" kind="ghost" icon="plus" onClick={() => newSession()}>
+                    New session
+                  </Button>
+                </span>
               </div>
               {sessions.length ? (
                 <div className="session-grid">

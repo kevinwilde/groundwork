@@ -1,10 +1,11 @@
 import { useId, useState } from 'react';
 import { useData } from '../../data/DataProvider';
-import { del, put } from '../../data/ops';
+import { put } from '../../data/ops';
 import type { Entry, Performance } from '../../db/types';
 import { fmtDate, today, type DateStr } from '../../lib/dates';
 import { uid } from '../../lib/ids';
 import { summarize, typeOf } from '../../lib/model';
+import { opsDeleteEntry } from '../../lib/plans';
 import { EntryEditor, type EntryEditorResult } from '../EntryEditor';
 import { ExerciseHeader } from '../EntryRow';
 import { Modal } from '../Modal';
@@ -62,7 +63,7 @@ export function EntryDialog({ entry, exerciseId, date: date0, initial, source = 
               icon="trash"
               onClick={() => {
                 onClose();
-                void saveWithUndo([del('entries', entry.id)], `Deleted ${ex.name} on ${fmtDate(entry.date)}`);
+                void saveWithUndo(opsDeleteEntry(d, entry), `Deleted ${ex.name} on ${fmtDate(entry.date)}`);
               }}
             >
               Delete

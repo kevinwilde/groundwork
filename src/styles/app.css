@@ -2753,6 +2753,674 @@ code {
   }
 }
 
+/* ---------- plans ---------- */
+.plan-status {
+  --c: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--surface));
+  background: color-mix(in srgb, var(--c) 12%, var(--surface));
+  color: color-mix(in srgb, var(--c) 80%, var(--ink));
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.plan-status.planned {
+  --c: var(--accent);
+  background: transparent;
+}
+.plan-status.in-progress {
+  --c: var(--accent);
+}
+.plan-status.missed {
+  --c: var(--warn);
+}
+.plan-status.done {
+  --c: var(--good);
+}
+.plan-days {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-day:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-day.has {
+  padding-bottom: 12px;
+}
+.plan-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+.plan-day-name {
+  font: 700 17px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.plan-day-date {
+  margin-left: 6px;
+  font: 500 14px/1 var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+.plan-day-head .btn {
+  min-height: 44px;
+}
+.plan-day-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.plan-card.in-progress {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.plan-card-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 20px/1.05 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.plan-card-list {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.plan-card-meta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.plan-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.plan-card-del {
+  margin-left: auto;
+}
+.plan-missed-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-missed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-missed:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-missed-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.plan-missed-actions {
+  display: flex;
+  gap: 6px;
+}
+.plan-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.plan-editor-fields {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 12px;
+}
+.plan-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plan-block {
+  gap: 10px;
+  scroll-margin: 80px;
+}
+.plan-block-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.plan-last {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.plan-copy-field {
+  flex: 1;
+}
+.plan-copy-btn {
+  align-self: flex-end;
+}
+@media (max-width: 600px) {
+  .plan-editor-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-editor-fields .date-field {
+    max-width: none;
+  }
+  .plan-day-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Touch screens: every plan control is at least 44 × 44. */
+@media (max-width: 899px) {
+  .plan-card-actions .btn,
+  .plan-missed-actions .btn,
+  .plan-block .btn.sm {
+    height: 44px;
+  }
+  .plan-card-actions .icon-btn,
+  .plan-block-head .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.plan-today-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-today-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-today-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-today-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.plan-today-row .btn {
+  min-height: 44px;
+}
+.plan-coming {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.plan-coming-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plan-coming-row:hover {
+  background: var(--surface-2);
+}
+.plan-coming-day {
+  font-weight: 700;
+}
+.plan-today-missed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  font-size: 14px;
+}
+.plan-today-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 -10px -6px;
+}
+@media (max-width: 899px) {
+  .plan-today-missed .btn,
+  .plan-today-foot .btn {
+    height: 44px;
+  }
+}
+
+.plan-day-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-day-list .plan-today-row {
+  flex-wrap: wrap;
+}
+.plan-day-actions {
+  display: flex;
+  gap: 4px;
+}
+@media (max-width: 899px) {
+  .plan-day-actions .btn,
+  .modal-body .section-head .btn {
+    height: 44px;
+  }
+}
+/* Calendar: a planned or in-progress plan draws a dashed outline inside its day (the focus ring stays free). */
+.cal-day.planned::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* ---------- workout ---------- */
+/* Phone-first, for one thumb: big rows, a 44 × 44 tick on the right. */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.wk-status {
+  gap: 10px;
+}
+.wk-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wk-progress-text {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.wk-progress-text b {
+  font: 700 22px/1 var(--font-display);
+  color: var(--ink);
+}
+.wk-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+.wk-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--good);
+  transition: width 0.25s ease-out;
+}
+.wk-when {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  font-size: 14px;
+}
+.wk-block {
+  gap: 10px;
+}
+.wk-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wk-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 6px 6px 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  scroll-margin: 16px;
+}
+.wk-set.current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.wk-set.done {
+  background: color-mix(in srgb, var(--good) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--good) 30%, var(--line));
+}
+.wk-set.skipped {
+  background: transparent;
+  border-style: dashed;
+}
+.wk-set-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.wk-set-main {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.wk-set-text {
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.wk-set.done .set-n {
+  background: color-mix(in srgb, var(--good) 22%, var(--surface));
+  color: color-mix(in srgb, var(--good) 75%, var(--ink));
+}
+.wk-was {
+  color: var(--ink-3);
+  font-weight: 500;
+  text-decoration-thickness: 1.5px;
+}
+.wk-skipped-val {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.wk-tick {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  color: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s, border-color 0.12s, transform 0.08s;
+}
+.wk-tick:hover {
+  border-color: var(--good);
+  color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+.wk-tick:active {
+  transform: scale(0.94);
+}
+.wk-set.current .wk-tick {
+  border-color: var(--accent);
+}
+.wk-set.done .wk-tick {
+  border-color: var(--good);
+  background: var(--good);
+  color: var(--surface);
+}
+.wk-set.skipped .wk-tick {
+  border-style: dashed;
+  color: var(--ink-3);
+}
+.wk-set.open {
+  border-color: var(--accent);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.wk-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: -7px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--surface);
+}
+.wk-editor:focus {
+  outline: none;
+}
+.wk-editor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.wk-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px 12px;
+}
+.wk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.wk-field small {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.wk-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wk-step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 600 22px/1 var(--font-body);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.wk-step:hover {
+  background: var(--surface-3);
+}
+.wk-step:active {
+  transform: translateY(1px);
+}
+.wk-input {
+  height: 44px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 17px;
+}
+.wk-editor-actions,
+.wk-prompt-actions,
+.wk-block-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wk-editor-actions .btn,
+.wk-prompt-actions .btn,
+.wk-block-actions .btn {
+  min-height: 44px;
+}
+.wk-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 15px;
+}
+.wk-block-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+.wk-block.collapsed {
+  padding: 0;
+}
+.wk-summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-summary:hover {
+  background: var(--surface-2);
+}
+.wk-summary-name {
+  font: 700 18px/1.1 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.wk-summary-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.wk-summary .icon {
+  color: var(--ink-3);
+}
+.wk-foot {
+  gap: 12px;
+}
+.wk-foot .btn,
+.wk-foot .input {
+  min-height: 44px;
+}
+.wk-finish {
+  align-self: stretch;
+  height: 52px;
+  font-size: 16px;
+}
+.wk-done {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.wk-done-title {
+  font: 700 28px/1 var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--good);
+}
+.wk-done-title:focus {
+  outline: none;
+}
+.wk-done-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.wk-done-count {
+  font-size: 16px;
+  color: var(--ink-2);
+}
+.wk-done-count b {
+  font: 700 24px/1 var(--font-display);
+  color: var(--ink);
+}
+.wk-misses {
+  margin: 0;
+  padding-left: 20px;
+}
+.wk-done-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wk-done-actions .btn {
+  min-height: 44px;
+}
+@media (max-width: 899px) {
+  /* Keep the current set clear of the fixed tab bar when it scrolls into view. */
+  .wk-set {
+    scroll-margin-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px));
+  }
+  .wk-block-head .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .wk-block .btn.sm,
+  .page-head .btn {
+    height: 44px;
+  }
+}
+
 /* ---------- motion ---------- */
 @keyframes fade-in {
   from {

@@ -13,7 +13,9 @@ type Live = Extract<Version, { live: true }>;
  * - an exercise loses the ids of deleted tags (tags are only labels, as in opsDeleteTag).
  *
  * A parent comes back only if one side had it live, with a new stamp newer than both sides. Soft
- * links (entry.sessionId, entry.snackId, session items, saved-view ids) are left alone, as today.
+ * links (entry.sessionId, entry.snackId, entry.planId, session items, plan items and their entryId,
+ * plan.sessionId, saved-view ids) are left alone: a plan item whose exercise is gone is hidden, as
+ * sessionExercises() hides a session's.
  * Repeats until nothing changes. Replaces entries in `merged` and returns their keys. Pure.
  */
 export function repair(merged: SyncSet, lv: SyncSet, rv: SyncSet, stamp: () => string): Set<Key> {

@@ -3,7 +3,8 @@ import { TABLES, type DataTable } from '../db/types';
 import type { DeviceInfo } from './device';
 import { totalCount, VERBS, type Counts } from './merge';
 
-export type CommitKind = 'first' | 'sync' | 'undo';
+/** `format`: a sync that changed nothing but `groundwork.json`, after an update to the app. */
+export type CommitKind = 'first' | 'sync' | 'undo' | 'format';
 
 const MAX_SUBJECT = 72;
 
@@ -23,6 +24,7 @@ export function commitSubject(device: string, counts: Counts, kind: CommitKind):
   const name = clean(device);
   const total = totalCount(counts);
   if (kind === 'first') return `${name}: first sync, ${total} ${total === 1 ? 'record' : 'records'}`;
+  if (kind === 'format') return `${name}: updated the repository format`;
   if (!total) return `${name}: tidied the deleted-records list`;
   const text = clauses(counts);
   const subject = kind === 'undo' ? `${name}: undid a sync (${text})` : `${name}: ${text}`;

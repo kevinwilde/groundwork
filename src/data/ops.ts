@@ -174,19 +174,20 @@ export async function applyOps(ops: Op[], opts: ApplyOptions = {}): Promise<Op[]
 
 export async function readAll(db: GroundworkDB = defaultDb) {
   return db.transaction('r', TABLES.map((t) => db.table(t)), async () => {
-    const [types, tags, exercises, entries, snacks, sessions, bodyParts, checkins, views, settings] = await Promise.all([
+    const [types, tags, exercises, entries, snacks, sessions, plans, bodyParts, checkins, views, settings] = await Promise.all([
       db.types.toArray(),
       db.tags.toArray(),
       db.exercises.toArray(),
       db.entries.toArray(),
       db.snacks.toArray(),
       db.sessions.toArray(),
+      db.plans.toArray(),
       db.bodyParts.toArray(),
       db.checkins.toArray(),
       db.views.toArray(),
       db.settings.toArray(),
     ]);
-    return { types, tags, exercises, entries, snacks, sessions, bodyParts, checkins, views, settings };
+    return { types, tags, exercises, entries, snacks, sessions, plans, bodyParts, checkins, views, settings };
   });
 }
 

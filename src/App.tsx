@@ -12,6 +12,9 @@ import { CheckinPage } from './pages/CheckinPage';
 import { DataPage } from './pages/DataPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { LogPage } from './pages/LogPage';
+import { PlanEditorPage } from './pages/plan/PlanEditorPage';
+import { PlansPage } from './pages/plan/PlansPage';
+import { WorkoutPage } from './pages/plan/WorkoutPage';
 import { TodayPage } from './pages/TodayPage';
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
@@ -65,6 +68,11 @@ function Layout() {
         <Routes>
           <Route path="/" element={<TodayPage />} />
           <Route path="/log" element={<LogPage />} />
+          {/* Plans aren't a tab: the phone tab bar is full. Reached from Today, Log and the calendar. */}
+          <Route path="/plan" element={<PlansPage />} />
+          <Route path="/plan/new" element={<PlanEditorPage />} />
+          <Route path="/plan/:id/edit" element={<PlanEditorPage />} />
+          <Route path="/plan/:id" element={<WorkoutPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/checkin" element={<CheckinPage />} />
           <Route path="/library" element={<LibraryPage />} />

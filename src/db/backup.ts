@@ -10,10 +10,11 @@ import { TABLES, type DataTable, type Tables, type Tombstone } from './types';
 
 export const BACKUP_APP = 'groundwork';
 /**
- * 2 added saved sessions; 3 added sync stamps (`hlc`) and tombstones. Older backups import fine:
- * sessions default to none, and their records get legacy stamps.
+ * 2 added saved sessions; 3 added sync stamps (`hlc`) and tombstones; 4 added workout plans and
+ * `planId` on entries. Older backups import fine: sessions and plans default to none, and their
+ * records get legacy stamps.
  */
-export const BACKUP_SCHEMA = 3;
+export const BACKUP_SCHEMA = 4;
 
 const id = z.string().min(1);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dates must look like 2026-09-25');
@@ -30,16 +31,26 @@ const field = z.object({
   plain: z.enum(['s', 'min']).optional(),
 });
 
+const plannedSet = z.looseObject({ target: setValues, done: setValues.optional(), skipped: z.boolean().optional(), added: z.boolean().optional() });
+const planItem = z.looseObject({
+  key: z.string().min(1), exerciseId: id, sets: z.array(plannedSet).optional(), target: setValues.optional(), done: setValues.optional(), skipped: z.boolean().optional(),
+  notes: z.string().default(''), entryId: z.string().nullable().optional(),
+});
+
 // Unknown keys pass through (z.looseObject) so newer backups keep extra data.
 // Also used to validate the files synced to GitHub (src/sync/layout.ts), without applying defaults there.
 export const recordSchemas = {
   types: z.looseObject({ id, name: z.string(), mode: z.enum(['sets', 'single']), fields: z.array(field), color: z.string(), order: z.number().default(50), createdAt: ts.default(0), ...stamps }),
   tags: z.looseObject({ id, name: z.string(), color: z.string(), createdAt: ts.default(0), ...stamps }),
   exercises: z.looseObject({ id, name: z.string(), typeId: id, tagIds: z.array(z.string()).default([]), color: z.string().default('#687686'), notes: z.string().default(''), archived: z.boolean().default(false), createdAt: ts.default(0), ...stamps }),
-  entries: z.looseObject({ id, exerciseId: id, date, notes: z.string().default(''), source: z.enum(['log', 'snack']).default('log'), snackId: z.string().nullable().optional(), sessionId: z.string().nullable().optional(), sample: z.boolean().optional(), createdAt: ts.default(0), ...stamps, ...perf }),
+  entries: z.looseObject({ id, exerciseId: id, date, notes: z.string().default(''), source: z.enum(['log', 'snack']).default('log'), snackId: z.string().nullable().optional(), sessionId: z.string().nullable().optional(), planId: z.string().nullable().optional(), sample: z.boolean().optional(), createdAt: ts.default(0), ...stamps, ...perf }),
   snacks: z.looseObject({ id, exerciseId: id, instruction: z.string().default(''), perDay: z.number().default(0), active: z.boolean().default(true), order: z.number().default(0), createdAt: ts.default(0), ...stamps, ...perf }),
   sessions: z.looseObject({
     id, name: z.string(), items: z.array(z.looseObject({ exerciseId: id, ...perf })).default([]), notes: z.string().default(''), order: z.number().default(0), createdAt: ts.default(0), ...stamps,
+  }),
+  plans: z.looseObject({
+    id, date, name: z.string(), sessionId: z.string().nullable().optional(), items: z.array(planItem).default([]), notes: z.string().default(''), order: z.number().default(0),
+    finishedAt: z.number().nullable().optional(), createdAt: ts.default(0), ...stamps,
   }),
   bodyParts: z.looseObject({ id, name: z.string(), active: z.boolean().default(true), notes: z.string().default(''), order: z.number().default(0), createdAt: ts.default(0), ...stamps }),
   checkins: z.looseObject({

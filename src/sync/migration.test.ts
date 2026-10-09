@@ -52,11 +52,11 @@ async function dump(db: GroundworkDB) {
 }
 
 describe('upgrading a v2 database', () => {
-  it('opens as v3 with its data intact', async () => {
+  it('opens as the current version with its data intact', async () => {
     await makeV2('gw-migrate-open');
     const db = new GroundworkDB('gw-migrate-open');
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(await db.entries.get('en_mine')).toMatchObject({ exerciseId: 'ex_rdl', sets: [{ reps: 6, weight: 95 }] });
     expect(await db.exercises.get('ex_rdl')).toMatchObject({ name: 'RDL', createdAt: FIRST_RUN });
     expect(await db.tags.count()).toBe([...seedIndex().values()].filter((x) => x.table === 'tags').length - 1);

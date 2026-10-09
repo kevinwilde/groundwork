@@ -37,7 +37,7 @@ export function SyncResult({ outcome, device, now, onUndo }: Props) {
       <p>{here ? `On this ${device.name}: ${here}.` : `Nothing new for this ${device.name}.`}</p>
       {outcome.kind === 'synced' ? (
         <p>
-          Sent to GitHub: {sent || 'an update to the deleted-records list'}.{' '}
+          Sent to GitHub: {sent || (outcome.formatOnly ? 'an update to the repository format' : 'an update to the deleted-records list')}.{' '}
           {outcome.commitUrl && (
             <a href={outcome.commitUrl} target="_blank" rel="noreferrer">
               View commit
