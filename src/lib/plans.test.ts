@@ -374,12 +374,25 @@ describe('the finish summary', () => {
     expect(shortfall(lift, bench([{ target: set(5, 65), done: set(5, 65) }, { target: set(5, 65), done: set(5, 65) }, { target: set(5, 65), done: set(4, 65) }]))).toBe('14 of 15 reps');
     expect(shortfall(lift, bench([{ target: set(5, 65), done: set(5, 65) }]))).toBeNull();
     expect(shortfall(lift, bench([{ target: { weight: 65 }, done: { weight: 65 } }, { target: { weight: 65 } }]))).toBe('1 of 2 sets');
-    expect(shortfall(hold, liftItem('k', 'ex_plank', [{ target: { duration: 60 }, done: { duration: 45 } }, { target: { duration: 60 }, skipped: true }]))).toBe('45 s of 2:00');
+    expect(shortfall(hold, liftItem('k', 'ex_plank', [{ target: { duration: 60 }, done: { duration: 45 } }, { target: { duration: 60 } }]))).toBe('45 s of 2:00');
     expect(shortfall(run, runItem)).toBe('not done');
     expect(shortfall(run, { ...runItem, done: { duration: 1400, distance: 2.5 } })).toBe('2.5 of 3.1 mi');
     expect(shortfall(run, { ...runItem, done: { duration: 1600, distance: 3.1 } })).toBeNull();
     const d = library();
     expect(planShortfalls(d, plan('p', TODAY, [bench([{ target: set(5, 65) }]), runItem])).map((x) => `${x.ex.name}: ${x.text}`)).toEqual(['Bench Press: 0 of 5 reps', 'Run: not done']);
+  });
+
+  it('leaves skipped sets out of the comparison', () => {
+    // Skip exercise: deliberate, and already counted as skipped.
+    const calf = liftItem('pi_calf', 'ex_calf', [{ target: { reps: 15 }, skipped: true }, { target: { reps: 15 }, skipped: true }, { target: { reps: 15 }, skipped: true }]);
+    expect(shortfall(bw, calf)).toBeNull();
+    expect(shortfall(run, { ...runItem, skipped: true })).toBeNull();
+    // Two sets done as planned, one skipped: on target.
+    expect(shortfall(lift, bench([{ target: set(5, 65), done: set(5, 65) }, { target: set(5, 65), done: set(5, 65) }, { target: set(5, 65), skipped: true }]))).toBeNull();
+    expect(shortfall(hold, liftItem('k', 'ex_plank', [{ target: { duration: 60 }, done: { duration: 45 } }, { target: { duration: 60 }, skipped: true }]))).toBe('45 s of 60 s');
+    expect(shortfall(lift, bench([{ target: { weight: 65 }, done: { weight: 65 } }, { target: { weight: 65 } }, { target: { weight: 65 }, skipped: true }]))).toBe('1 of 2 sets');
+    const d = library();
+    expect(planShortfalls(d, plan('p', TODAY, [calf, bench([{ target: set(5, 65), done: set(4, 65) }])])).map((x) => `${x.ex.name}: ${x.text}`)).toEqual(['Bench Press: 4 of 5 reps']);
   });
 
   it('finds the last time, skipping snacks and this plan', () => {

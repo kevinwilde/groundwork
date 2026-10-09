@@ -480,10 +480,12 @@ const sum = (sets: SetValues[], key: string) => sets.reduce((n, s) => n + (typeo
 
 /**
  * How an exercise fell short of its target, or null when it didn't: "14 of 15 reps", "2:15 of 3:00",
- * "2 of 3 sets", "4.2 of 5 mi", "not done".
+ * "2 of 3 sets", "4.2 of 5 mi", "not done". Skipped sets are left out: skipping was deliberate, and
+ * the summary already counts them.
  */
 export function shortfall(type: ExerciseType, item: PlanItem): string | null {
-  const slots = slotsOf(item);
+  const slots = slotsOf(item).filter((s) => !s.skipped);
+  if (!slots.length) return null;
   const done = slots.flatMap((s) => (s.done ? [s.done] : []));
   if (!isSetItem(item)) {
     if (!done.length) return 'not done';
