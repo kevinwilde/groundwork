@@ -76,6 +76,7 @@ describe('plan text', () => {
     const text = planText(lift, { sets });
     expect(text).toBe('2x6@100, 5@110');
     expect(parsePlan(lift, text).sets).toEqual(sets);
+    expect(parsePlan(lift, '2/6/100,5@110').sets).toEqual(sets);
   });
   it('round-trips timed holds', () => {
     const text = planText(hold, { sets: [{ duration: 60 }, { duration: 60 }] });

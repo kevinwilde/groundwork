@@ -71,6 +71,18 @@ describe('quick entry', () => {
     expect(parseQuick(lift, '6/100')).toHaveLength(6);
     expect(parseQuick(lift, '6/100')?.[0]).toEqual({ reps: 100 });
   });
+  it('concatenates comma-separated groups', () => {
+    const mixed = [
+      { reps: 6, weight: 100 },
+      { reps: 6, weight: 100 },
+      { reps: 5, weight: 110 },
+    ];
+    expect(parseQuick(lift, '2x6@100, 5@110')).toEqual(mixed);
+    expect(parseQuick(lift, '2/6/100,1/5/110')).toEqual(mixed);
+    expect(parseQuick(lift, '6@100,')).toEqual([{ reps: 6, weight: 100 }]);
+    expect(parseQuick(lift, '6@100, heavy')).toBeNull();
+    expect(parseQuick(lift, ' , ')).toBeNull();
+  });
   it('rejects input it cannot map', () => {
     expect(parseQuick(lift, 'heavy')).toBeNull();
     expect(parseQuick(bw, '3x10@20')).toBeNull(); // bodyweight has one field
