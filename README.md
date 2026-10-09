@@ -52,7 +52,7 @@ Service-worker options live in `vite.config.ts`; in `npm run dev` the service wo
 ## What's in it
 
 - **Today**: a movement-snack card (least recently done first, daily targets, one-tap Done, a
-  countdown for timed holds), today's training, how you feel, and the current week.
+  countdown for timed holds), what's planned, today's training, how you feel, and the current week.
 - **Log**: pick a date and an exercise and record it. Set-based types get a set table and quick entry
   (`3x6@100`, `3 × 60s`, `5x5 225`); single-effort types get a field grid with live pace.
 - **Saved sessions**: a named group of exercises you do together, like "Upper A" (bench, pull-ups,
@@ -60,6 +60,8 @@ Service-worker options live in `vite.config.ts`; in `npm run dev` the service wo
   last time you logged that session (or the exercise's last entry, or the session's plan). Adjust
   anything, skip an exercise or add one for the day, then **Log all**. Create sessions under
   Library → Sessions, or use **Save as session** on a day you've already logged.
+- **Plans**: workouts planned ahead with every set's target, then followed at the gym one tick at a
+  time. See [Workout plans](#workout-plans).
 - **Calendar**: month, year and list views. Filter by tags (any/all), exercises, types or saved sessions; colour by
   tag, exercise or type, or shade by a measure (entries, sets, reps, volume, time, distance). Overlays
   for check-ins and a body part's pain score. Saved views, days-per-week chart, and a progress chart
@@ -71,6 +73,37 @@ Service-worker options live in `vite.config.ts`; in `npm run dev` the service wo
   under Body parts to move them up or down; check-ins and pain trends list them in the same order.
 - **Data**: sync with GitHub, export/import (merge or replace, validated with Zod), install and offline
   status, sample history, storage status, week start and theme settings, erase all.
+
+## Workout plans
+
+A plan is one dated workout: a name, exercises with a target for every set (`5 × 190 lb`) or for a
+single effort (`5 mi in 40:00`), and notes. It is separate from a saved session: a session is a reusable
+template, and a plan is often started from one, but editing a plan never changes the session.
+
+- **Planning**: the **Plans** page (`#/plan`, reached from Today, the Log page's **Plan for later** and the
+  Calendar page; it isn't a tab) shows plans missed in the last two weeks, the next 14 days one by one, and
+  anything later. **+ Plan** starts from a saved session (targets come from the last time you did it,
+  then your history, then the session's own plan), from a day you've logged, or blank. The editor
+  takes quick entry (`3 × 5 @ 190`, `5 @ 115, 2 × 5 @ 105`), has a **+5 lb** chip (2.5 for kg), and shows
+  when you last did each exercise. Targets are optional. A day can hold any number of plans, for any date
+  ahead. Plans can be duplicated or moved to another day. On the calendar, a day with a plan still to do
+  gets a dashed outline, and the day dialog lists its plans.
+- **Working out** (`#/plan/<id>`): tap a set's tick to log it as planned; tap it again to untick. Tap the
+  row to change what you did (steppers for reps, weight, time and distance), skip it, or remove an added
+  set. If you change a weight, Groundwork offers it for the later sets that had the same target. **Every
+  tick is saved at once** as that exercise's entry, so closing the app or a locked phone loses nothing, and
+  ticked sets show in Today's training and the calendar like any other entry. **Finish** shows sets done
+  against planned and anything that fell short; a finished plan can be reopened. A saved session's
+  **Start workout** on the Log page makes a plan for that day and opens it; **Log all** still logs a
+  whole session afterwards in one go.
+- **Status** is worked out, never stored: planned, missed (nothing ticked and the day has passed), in
+  progress, or done (finished, or every set ticked or skipped). Plans for past days log to their own
+  date, with a **Move to today** link.
+- **A plan's entries and History**: deleting a plan's entry from History unticks that exercise in the
+  plan (Undo brings both back). You can also edit a plan's entry in History, but the plan stays in charge
+  of it: the next tick on that exercise, moving the plan to another day, or saving a change to that
+  exercise in the plan editor rewrites the entry from the plan's ticked sets. Deleting a plan keeps its
+  entries.
 
 On first run the app loads a starter library and ten weeks of **sample history** (flagged, shown with
 a "sample" badge) so the calendar has something to show. Remove it from the banner or the Data page;
@@ -103,9 +136,12 @@ backup. Where both sides have the same record, the most recently changed copy wi
 
 **What's in the repository:** JSON Lines files, one record per line: `types.jsonl`, `tags.jsonl`,
 `exercises.jsonl`, `snacks.jsonl` (mini-exercises), `sessions.jsonl`, `bodyParts.jsonl`, `views.jsonl`,
-`settings.jsonl` (the week start only), `entries/YYYY-MM.jsonl` and `checkins/YYYY-MM.jsonl` by month,
-`deleted.jsonl` (deletions, so they reach every device; kept for a year), and `groundwork.json` (the
-format). Sample data and device-local settings never leave the device. Make changes in the app: hand
+`settings.jsonl` (the week start only), `entries/YYYY-MM.jsonl`, `checkins/YYYY-MM.jsonl` and
+`plans/YYYY-MM.jsonl` by month, `deleted.jsonl` (deletions, so they reach every device; kept for a
+year), and `groundwork.json` (the format). Format 2 added plans: once one device has synced with this
+version, devices still on an older one stop with a message asking to update the app, before changing
+anything. The first sync after updating rewrites `groundwork.json`; if nothing else changed, its commit
+says "updated the repository format". Sample data and device-local settings never leave the device. Make changes in the app: hand
 edits on GitHub may be overwritten, and a malformed line stops sync with its file and line number.
 
 **How it merges:** every write is stamped with a hybrid logical clock, so the newest edit wins even when
@@ -147,16 +183,17 @@ src/
   db/          Dexie schema, record types, seed data, backup (export/import)
   data/        DataProvider (live query → in-memory indexes), applyOps (writes + undo), hooks
   sync/        GitHub sync: clock stamps, merge, repository layout, GitHub client, engine, Sync card (ui/)
-  lib/         Pure logic: dates, formatting, colours, summaries/metrics, quick entry, calendar aggregation
+  lib/         Pure logic: dates, formatting, colours, summaries/metrics, quick entry, calendar aggregation,
+               sessions, workout plans (plans.ts: status, building plans, the tick op builders)
   components/  UI primitives, modal host, entry editor, dialogs, check-in form, charts
-  pages/       Today, Log, Calendar, Check-in, Library, Data
+  pages/       Today, Log, Calendar, Check-in, Library, Data, and plan/ (Plans, plan editor, workout)
   styles/      app.css (design tokens for light and dark, all component styles)
 public/
   logo.svg     Source for the generated app icons
 ```
 
-The database is on schema version 3 (v2 added saved sessions; v3 added `tombstones` and the device-local
-`meta` table for sync); existing data upgrades automatically when the new version first opens, and records
+The database is on schema version 4 (v2 added saved sessions; v3 added `tombstones` and the device-local
+`meta` table for sync; v4 added `plans`, and entries' optional `planId`); existing data upgrades automatically when the new version first opens, and records
 saved before v3 get their sync stamps once at startup.
 
 All writes go through `applyOps()` in `src/data/ops.ts`, which runs them in one IndexedDB transaction and
@@ -164,6 +201,7 @@ returns the inverse ops; that is how every delete offers Undo. It also stamps ev
 leaves a tombstone for every deletion. To change the schema, add a new `this.version(n)` block in
 `src/db/db.ts` rather than editing version 1.
 
-See [plans/device-sync.md](plans/device-sync.md) for the sync design.
+See [plans/device-sync.md](plans/device-sync.md) for the sync design, and
+[plans/workout-planning.md](plans/workout-planning.md) for workout planning.
 
 See [plans/initial-implementation.md](plans/initial-implementation.md) for the initial implementation plan and data model.

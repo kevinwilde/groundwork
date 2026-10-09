@@ -235,7 +235,7 @@ The workout is phone-first and laid out for one thumb.
 
 ### 6. Docs and verification
 
-- [ ] README: the Plans section and the edge case of editing a plan's entry in History.
+- [x] README: the Plans section and the edge case of editing a plan's entry in History.
 - [ ] Typecheck, tests and build.
 - [ ] Browser check at phone width (375 px) and desktop, light and dark:
   - plan three days ahead;
@@ -251,3 +251,20 @@ The workout is phone-first and laid out for one thumb.
 - Repeating plans or weekly programmes.
 - Supersets and circuits.
 - Reordering plans within a day.
+
+## Deviations
+
+Agreed during implementation (2026-10-09):
+
+- **`PlannedSet.added`:** an optional flag on sets added during the workout, so **Remove set** is offered only for those.
+- **`EntryEditor` `keepBlank`:** a new option, off by default. Targets are optional, but `collect()` refused an exercise with only blank sets; the plan editor turns it on to keep them.
+- **Plan a workout on Today:** when the Planned card is hidden, Today's training shows a **Plan a workout** button, so Today always reaches planning.
+- **Repository format wording:** after the `FORMAT` bump, the first sync on an older repository rewrites `groundwork.json`. When nothing else changed, the commit and the Sync card said the deleted-records list was updated. That case is now a `format` commit kind: "updated the repository format".
+
+Small additions the plan didn't spell out:
+
+- **Builders:** `opsRemoveSet`, `opsSetNotes` (the per-exercise note, copied into the entry) and `opsSavePlan` (the editor's save, which rewrites entries for exercises whose ticks, notes or date changed). `opsMovePlan` moves the plan's entries too, by rewriting them from the plan.
+- **`planProgress`** returns `{ done, skipped, total }`; the progress bar counts skipped sets as dealt with.
+- **Duplicate** also drops skips, per-exercise notes (they're about that day) and items for deleted exercises.
+- **Calendar page:** a **Plans** button in its header, so the Plans page is reached from the calendar as well as from the day dialog's plan list.
+
