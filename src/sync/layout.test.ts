@@ -22,6 +22,10 @@ const sample = (): Version[] => [
   live('checkins', { id: 'ci_2', date: '2026-10-01', time: '18:40', moment: 'Evening', overall: 4, notes: '', pains: [], createdAt: 2, hlc: h(2) }),
   live('checkins', { id: 'ci_1', date: '2026-10-01', time: '07:10', moment: 'Morning', overall: null, notes: 'stiff', pains: [{ bodyPartId: 'bp_rknee', score: 3 }], createdAt: 1, hlc: h(1) }),
   live('settings', { key: 'weekStart', value: 1, hlc: h(5) }),
+  live('plans', { id: 'pl_b', date: '2026-10-11', name: 'Lower', items: [], notes: '', order: 2, createdAt: 41, hlc: h(41) }),
+  live('plans', { id: 'pl_a', date: '2026-10-11', name: 'Upper A', items: [{ key: 'pi_1', exerciseId: 'ex_bench', notes: '', sets: [{ target: { reps: 5, weight: 190 } }] }], notes: '', order: 1, createdAt: 40, hlc: h(40) }),
+  live('plans', { id: 'pl_c', date: '2026-11-02', name: 'Run', items: [], notes: '', order: 1, createdAt: 42, hlc: h(42) }),
+  tomb('plans', 'pl_gone', 300),
   tomb('tags', 'tag_b', 200),
   tomb('exercises', 'ex_a', 100),
 ];
@@ -46,12 +50,13 @@ describe('repository layout', () => {
     const files = renderFiles(index(sample()));
     expect([...files.keys()]).toEqual([
       MANIFEST_PATH, 'bodyParts.jsonl', 'checkins/2026-10.jsonl', 'deleted.jsonl', 'entries/2026-09.jsonl', 'entries/2026-10.jsonl',
-      'exercises.jsonl', 'sessions.jsonl', 'settings.jsonl', 'snacks.jsonl', 'tags.jsonl', 'types.jsonl',
+      'exercises.jsonl', 'plans/2026-10.jsonl', 'plans/2026-11.jsonl', 'sessions.jsonl', 'settings.jsonl', 'snacks.jsonl', 'tags.jsonl', 'types.jsonl',
     ]);
     const ids = (path: string) => files.get(path)!.trimEnd().split('\n').map((l) => JSON.parse(l).id);
     expect(ids('entries/2026-10.jsonl')).toEqual(['en_a', 'en_b']);
     expect(ids('checkins/2026-10.jsonl')).toEqual(['ci_1', 'ci_2']);
-    expect(ids('deleted.jsonl')).toEqual(['exercises:ex_a', 'tags:tag_b']);
+    expect(ids('deleted.jsonl')).toEqual(['exercises:ex_a', 'tags:tag_b', 'plans:pl_gone']);
+    expect(ids('plans/2026-10.jsonl')).toEqual(['pl_a', 'pl_b']);
     expect(ids('types.jsonl')).toEqual(['type_bw', 'type_hold', 'type_lift', 'type_run']);
     for (const text of files.values()) expect(text.endsWith('\n') && !text.endsWith('\n\n')).toBe(true);
     // Empty tables (views) have no file.
@@ -93,17 +98,17 @@ describe('repository layout', () => {
   });
 
   it('knows which paths it manages', () => {
-    for (const p of [MANIFEST_PATH, 'entries/2026-10.jsonl', 'checkins/2026-01.jsonl', 'deleted.jsonl', 'bodyParts.jsonl', 'settings.jsonl']) expect(isManagedPath(p)).toBe(true);
-    for (const p of ['README.md', 'package.json', 'entries/2026-1.jsonl', 'entries/2026-10.json', 'notes.jsonl', '.github/workflows/x.yml']) expect(isManagedPath(p)).toBe(false);
+    for (const p of [MANIFEST_PATH, 'entries/2026-10.jsonl', 'checkins/2026-01.jsonl', 'plans/2026-12.jsonl', 'deleted.jsonl', 'bodyParts.jsonl', 'settings.jsonl']) expect(isManagedPath(p)).toBe(true);
+    for (const p of ['README.md', 'package.json', 'entries/2026-1.jsonl', 'entries/2026-10.json', 'plans.jsonl', 'notes.jsonl', '.github/workflows/x.yml']) expect(isManagedPath(p)).toBe(false);
   });
 
   it('has a stable manifest', async () => {
-    expect(JSON.parse(renderManifest())).toEqual({ app: 'groundwork', format: 1, schema: 4, about: expect.stringContaining('One record per line') });
+    expect(JSON.parse(renderManifest())).toEqual({ app: 'groundwork', format: 2, schema: 4, about: expect.stringContaining('One record per line') });
     expect(await blobSha(renderManifest())).toBe(await blobSha(renderManifest()));
-    expect(await blobSha(renderManifest())).toMatchInlineSnapshot(`"7d9cb96dd9ce4af44046456d82f909b69c0601c1"`);
+    expect(await blobSha(renderManifest())).toMatchInlineSnapshot(`"f555c057b226922a847814e99497abb8636ef8cf"`);
     expect(() => checkManifest(renderManifest())).not.toThrow();
-    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 2, schema: 4 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
-    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 1, schema: 5 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
+    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 3, schema: 4 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
+    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 2, schema: 5 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
     // Data from older versions is read, and rewritten in the current format by the next sync that changes anything.
     expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 1, schema: 3 }))).not.toThrow();
     expect(() => checkManifest('{')).toThrow(expect.objectContaining({ code: 'bad-data' }));

@@ -3,7 +3,7 @@ import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { applyOps, clear, del, put, readAll } from '../data/ops';
 import { buildData } from '../data/snapshot';
-import { buildBackup } from '../db/backup';
+import { BACKUP_SCHEMA, buildBackup } from '../db/backup';
 import type { GroundworkDB } from '../db/db';
 import { libraryOps } from '../db/seed';
 import { TABLES } from '../db/types';
@@ -13,7 +13,7 @@ import { seededDevice, setText } from '../test/randomEdits';
 import { AUTHOR_EMAIL, disconnect, openContext, parseRepo, runSync, testConnection, undoSync, type SyncContext, type SyncOutcome } from './engine';
 import { SyncError } from './errors';
 import { SEED_HLC } from './hlc';
-import { isManagedPath, MANIFEST_PATH, parseFile, renderFiles, renderManifest } from './layout';
+import { FORMAT, isManagedPath, MANIFEST_PATH, parseFile, renderFiles, renderManifest } from './layout';
 import { getMeta, purgeTombstones, readSyncSet, setMeta } from './local';
 import { index } from './merge';
 import { TOMBSTONE_TTL } from './scope';
@@ -464,7 +464,7 @@ describe('repositories it must not change', () => {
     }, 'auth'));
   it('newer-format', () =>
     unchanged(async () => {
-      await fake.commitFiles({ [MANIFEST_PATH]: renderManifest().replace('"format": 1', '"format": 2') });
+      await fake.commitFiles({ [MANIFEST_PATH]: renderManifest().replace(`"format": ${FORMAT}`, `"format": ${FORMAT + 1}`) });
     }, 'newer-format'));
   it('bad-data', async () => {
     const e = await unchanged(async () => {
@@ -485,6 +485,40 @@ describe('repositories it must not change', () => {
     names.push(`engine-ng-${++n}`);
     const res = await testConnection({ repo: REPO, token: TOKEN }, { db: await seededDevice(`engine-ng-${n}`), fetch: fake.fetch, now });
     expect(res).toMatchObject({ ok: false, error: { code: 'not-groundwork', detail: { example: 'package.json' } } });
+  });
+});
+
+describe('repositories written by an older version', () => {
+  /** groundwork.json as version 1.1.0 wrote it: format 1, backup schema 3. */
+  const oldManifest = () => renderManifest().replace(`"format": ${FORMAT}`, '"format": 1').replace(`"schema": ${BACKUP_SCHEMA}`, '"schema": 3');
+
+  it('sets up and syncs, rewriting the manifest in a commit that says so', async () => {
+    const mac = await device('Mac');
+    await logEntry(mac, 'en_1');
+    await sync(mac);
+    await fake.commitFiles({ [MANIFEST_PATH]: oldManifest() });
+    expect(fake.files().get(MANIFEST_PATH)).toContain('"format": 1');
+
+    // Setup and a first sync on the older repository work; nothing but the manifest changes there.
+    const phone = await device('iPhone');
+    const out = await sync(phone);
+    expect(out).toMatchObject({ kind: 'synced', formatOnly: true, totals: { local: { added: { entries: 1 } }, remote: { added: {}, purged: 0 } } });
+    expect(subjects()[0]).toBe('iPhone: updated the repository format');
+    expect(fake.files().get(MANIFEST_PATH)).toBe(renderManifest());
+    expect((await sync(mac)).kind).toBe('up-to-date');
+    await expectConverged(mac, phone);
+  });
+
+  it('rewrites the manifest along with real changes, named after the changes', async () => {
+    const mac = await device('Mac');
+    await sync(mac);
+    await fake.commitFiles({ [MANIFEST_PATH]: oldManifest() });
+    await logEntry(mac, 'en_2');
+    const out = await sync(mac);
+    expect(out.kind).toBe('synced');
+    expect(out).not.toHaveProperty('formatOnly');
+    expect(subjects()[0]).toBe('Mac: added 1 entry');
+    expect(fake.files().get(MANIFEST_PATH)).toBe(renderManifest());
   });
 });
 

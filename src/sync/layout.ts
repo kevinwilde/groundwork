@@ -8,19 +8,23 @@ import { isSynced } from './scope';
 
 /**
  * How the data is laid out in the GitHub repository: JSON Lines, one record per line with a stable
- * key order, entries and check-ins split by month. Rendering is pure and deterministic, so the same
+ * key order, entries, check-ins and plans split by month. Rendering is pure and deterministic, so the same
  * records give the same bytes (and blob SHA) on every device.
  */
 
-/** Bumped when the layout changes incompatibly; older copies then stop with `newer-format`. */
-export const FORMAT = 1;
+/**
+ * Bumped when the layout changes incompatibly; older copies then stop with `newer-format`.
+ * 2 added `plans/YYYY-MM.jsonl` (and tombstones for plans, which older copies would refuse).
+ */
+export const FORMAT = 2;
 export const MANIFEST_PATH = 'groundwork.json';
 export const DELETED_PATH = 'deleted.jsonl';
 /** Foreign files a repository may hold before it has Groundwork data (GitHub's new-repository options). */
 export const STARTER_FILES = new Set(['README.md', 'LICENSE', '.gitignore']);
 
 const FLAT = ['types', 'tags', 'exercises', 'snacks', 'sessions', 'bodyParts', 'views', 'settings'] as const;
-const MANAGED = /^(?:groundwork\.json|(?:types|tags|exercises|snacks|sessions|bodyParts|views|settings|deleted)\.jsonl|(?:entries|checkins)\/\d{4}-\d{2}\.jsonl)$/;
+const MONTHLY = ['entries', 'checkins', 'plans'] as const;
+const MANAGED = /^(?:groundwork\.json|(?:types|tags|exercises|snacks|sessions|bodyParts|views|settings|deleted)\.jsonl|(?:entries|checkins|plans)\/\d{4}-\d{2}\.jsonl)$/;
 
 /** Files Groundwork reads and writes. Everything else is foreign: kept, and never read. */
 export const isManagedPath = (path: string) => MANAGED.test(path);
@@ -32,7 +36,7 @@ const month = (rec: AnyRecord) => {
 
 export function pathOf(v: Version): string {
   if (!v.live) return DELETED_PATH;
-  if (v.table === 'entries' || v.table === 'checkins') return `${v.table}/${month(v.rec)}.jsonl`;
+  if ((MONTHLY as readonly string[]).includes(v.table)) return `${v.table}/${month(v.rec)}.jsonl`;
   return `${v.table}.jsonl`;
 }
 
@@ -40,8 +44,8 @@ export function pathOf(v: Version): string {
 export function tableOfPath(path: string): DataTable | 'tombstones' | null {
   if (!isManagedPath(path) || path === MANIFEST_PATH) return null;
   if (path === DELETED_PATH) return 'tombstones';
-  if (path.startsWith('entries/')) return 'entries';
-  if (path.startsWith('checkins/')) return 'checkins';
+  const monthly = MONTHLY.find((t) => path.startsWith(`${t}/`));
+  if (monthly) return monthly;
   return FLAT.find((t) => path === `${t}.jsonl`) ?? null;
 }
 
@@ -87,7 +91,7 @@ function compareLines(a: Version, b: Version): number {
   }
   const x = a.rec;
   const y = b.rec;
-  if (a.table === 'entries') return cmp(str(x.date), str(y.date)) || cmp(num(x.createdAt), num(y.createdAt)) || cmp(str(x.id), str(y.id));
+  if (a.table === 'entries' || a.table === 'plans') return cmp(str(x.date), str(y.date)) || cmp(num(x.createdAt), num(y.createdAt)) || cmp(str(x.id), str(y.id));
   if (a.table === 'checkins') return cmp(str(x.date), str(y.date)) || cmp(str(x.time), str(y.time)) || cmp(num(x.createdAt), num(y.createdAt)) || cmp(str(x.id), str(y.id));
   if (a.table === 'settings') return cmp(str(x.key), str(y.key));
   return cmp(str(x.id), str(y.id));
@@ -175,6 +179,7 @@ This private repository holds the data synced by Groundwork, a personal exercise
 | \`bodyParts.jsonl\` | Body parts you track in check-ins |
 | \`views.jsonl\` | Saved calendar views |
 | \`entries/YYYY-MM.jsonl\` | Logged entries, one file per month |
+| \`plans/YYYY-MM.jsonl\` | Planned workouts, one file per month |
 | \`checkins/YYYY-MM.jsonl\` | Check-ins, one file per month |
 | \`deleted.jsonl\` | Records deleted in the app, so the deletion reaches every device |
 

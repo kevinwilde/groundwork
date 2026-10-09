@@ -23,6 +23,7 @@ describe('commit messages', () => {
     expect(commitSubject('Mac', counts({ added: { entries: 500, exercises: 63 } }), 'first')).toBe('Mac: first sync, 563 records');
     expect(commitSubject('Mac', counts({ deleted: { entries: 3 }, updated: { checkins: 1 } }), 'undo')).toBe('Mac: undid a sync (updated 1 check-in, deleted 3 entries)');
     expect(commitSubject('iPhone', counts({ purged: 4 }), 'sync')).toBe('iPhone: tidied the deleted-records list');
+    expect(commitSubject('iPhone', counts({}), 'format')).toBe('iPhone: updated the repository format');
   });
 
   it('adds a line per table and trailers that read back', () => {

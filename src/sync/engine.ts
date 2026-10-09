@@ -7,7 +7,7 @@ import { createGitHub, GitHubError, type CommitInfo, type GitHubApi, type RepoIn
 import { Clock, maxHlc, SEED_HLC, wallOf } from './hlc';
 import { checkManifest, DATA_README, groupByPath, isManagedPath, MANIFEST_PATH, parseFile, renderFiles, renderManifest, STARTER_FILES } from './layout';
 import { deleteMeta, ensureDevice, getMeta, readSyncSet, setMeta, type GitHubConfig, type RemoteInfo, type Snapshot } from './local';
-import { addCounts, count, diff, emptyCounts, index, mergeSets, planToOps, sameVersion, type Counts } from './merge';
+import { addCounts, count, diff, emptyCounts, index, mergeSets, planToOps, sameVersion, totalCount, type Counts } from './merge';
 import { commitMessage, parseTrailers } from './message';
 import { withSyncLock } from './lock';
 import { TOMBSTONE_TTL } from './scope';
@@ -53,7 +53,7 @@ export interface Totals {
 
 export type SyncOutcome =
   | { kind: 'up-to-date'; warnings: Warning[]; seq: number }
-  | { kind: 'pulled' | 'synced'; totals: Totals; commitUrl?: string; undo: Op[]; undoSeq: number | null; warnings: Warning[]; seq: number }
+  | { kind: 'pulled' | 'synced'; totals: Totals; commitUrl?: string; undo: Op[]; undoSeq: number | null; warnings: Warning[]; seq: number; formatOnly?: boolean }
   | { kind: 'preview'; counts: Totals; firstSync: boolean; remoteHasData: boolean; remoteRecords: number; ownRecords: number };
 
 const isEmptyRepo = (e: unknown) => e instanceof GitHubError && e.code === 'empty';
@@ -269,7 +269,9 @@ async function syncOnce(ctx: SyncContext, { preview = false, reason = 'manual' }
         await finish(head, info.tree, info.remote);
         return pulled();
       }
-      const kind = reason === 'undo' ? 'undo' : remote.size <= 1 ? 'first' : 'sync';
+      // Only the manifest changed: the first sync after an app update that changed the format.
+      const formatOnly = changes.every((c) => c.path === MANIFEST_PATH) && !totalCount(m.counts.remote) && !m.counts.remote.purged;
+      const kind = reason === 'undo' ? 'undo' : remote.size <= 1 ? 'first' : formatOnly ? 'format' : 'sync';
       const message = commitMessage({ device, counts: m.counts.remote, kind, app: APP_VERSION });
       const commit = await gh.createCommit({ message, tree, parents: [head], author: { name: `Groundwork (${device.name})`, email: AUTHOR_EMAIL } });
       try {
@@ -283,7 +285,7 @@ async function syncOnce(ctx: SyncContext, { preview = false, reason = 'manual' }
       }
       addCounts(totals.remote, m.counts.remote);
       await finish(commit.sha, tree, { device: device.name, deviceId: device.id, at: now() });
-      return { kind: 'synced', totals, commitUrl: commit.htmlUrl, undo, undoSeq, warnings, seq: syncedSeq };
+      return { kind: 'synced', totals, commitUrl: commit.htmlUrl, undo, undoSeq, warnings, seq: syncedSeq, ...(kind === 'format' ? { formatOnly: true } : {}) };
     }
     throw syncError('busy');
   } catch (e) {
