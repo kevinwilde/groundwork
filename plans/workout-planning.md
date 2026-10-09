@@ -196,7 +196,7 @@ The workout is phone-first and laid out for one thumb.
 
 ### 1. Data model and storage (no visible change)
 
-- [ ] Add the `Plan`, `PlanItem` and `PlannedSet` types, and `Entry.planId`.
+- [x] Add the `Plan`, `PlanItem` and `PlannedSet` types, and `Entry.planId`.
 - [ ] Add Dexie v4 with the `plans` table.
 - [ ] Update the snapshot (`plans`, `plansByDate`), `readAll()`, `EMPTY_RAW` and the labels.
 - [ ] Bump the backup schema to 4 and add `recordSchemas.plans`. A v3 backup must import with no plans.

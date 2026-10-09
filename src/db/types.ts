@@ -69,6 +69,8 @@ export interface Entry extends Performance, Stamped {
   snackId?: string | null;
   /** Saved session this entry was logged as part of. */
   sessionId?: string | null;
+  /** Workout plan whose ticked sets this entry holds (schema v4). */
+  planId?: string | null;
   sample?: boolean;
   createdAt: number;
 }
@@ -85,6 +87,48 @@ export interface SavedSession extends Stamped {
   items: SessionItem[];
   notes: string;
   order: number;
+  createdAt: number;
+}
+
+/** One planned set: the target, and once ticked, what was done. */
+export interface PlannedSet {
+  target: SetValues;
+  /** What was done. Absent until ticked. */
+  done?: SetValues;
+  skipped?: boolean;
+  /** Added during the workout, so it can be removed again. */
+  added?: boolean;
+}
+
+export interface PlanItem {
+  /** Stable within the plan, so ticks and React keys survive reordering. */
+  key: string;
+  exerciseId: string;
+  /** Set-based types (lifts). */
+  sets?: PlannedSet[];
+  /** Single-effort types (runs): the target, and what was done. */
+  target?: SetValues;
+  done?: SetValues;
+  skipped?: boolean;
+  /** Note for this exercise today, copied into the entry. */
+  notes: string;
+  /** The entry this exercise's ticked sets are logged as. */
+  entryId?: string | null;
+}
+
+/** A dated workout planned ahead (schema v4). Its status is derived, never stored (src/lib/plans.ts). */
+export interface Plan extends Stamped {
+  id: string;
+  date: string;
+  name: string;
+  /** Saved session it was started from. Its entries are logged with this sessionId too. */
+  sessionId?: string | null;
+  items: PlanItem[];
+  notes: string;
+  /** Position among the plans on the same date. */
+  order: number;
+  /** Set by Finish. Ticking works without it. */
+  finishedAt?: number | null;
   createdAt: number;
 }
 
