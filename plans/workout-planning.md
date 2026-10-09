@@ -199,7 +199,7 @@ The workout is phone-first and laid out for one thumb.
 - [x] Add the `Plan`, `PlanItem` and `PlannedSet` types, and `Entry.planId`.
 - [x] Add Dexie v4 with the `plans` table.
 - [x] Update the snapshot (`plans`, `plansByDate`), `readAll()`, `EMPTY_RAW` and the labels.
-- [ ] Bump the backup schema to 4 and add `recordSchemas.plans`. A v3 backup must import with no plans.
+- [x] Bump the backup schema to 4 and add `recordSchemas.plans`. A v3 backup must import with no plans.
 - [ ] Sync: add the `plans/YYYY-MM.jsonl` layout and bump `FORMAT`. Check the `newer-format` behaviour on an old copy.
 - [ ] Extend the test helpers and convergence tests to cover plans.
 

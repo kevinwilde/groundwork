@@ -98,12 +98,14 @@ describe('repository layout', () => {
   });
 
   it('has a stable manifest', async () => {
-    expect(JSON.parse(renderManifest())).toEqual({ app: 'groundwork', format: 1, schema: 3, about: expect.stringContaining('One record per line') });
+    expect(JSON.parse(renderManifest())).toEqual({ app: 'groundwork', format: 1, schema: 4, about: expect.stringContaining('One record per line') });
     expect(await blobSha(renderManifest())).toBe(await blobSha(renderManifest()));
-    expect(await blobSha(renderManifest())).toMatchInlineSnapshot(`"f2e5f0f305c6c749e3cb9586af41153ccb27bab3"`);
+    expect(await blobSha(renderManifest())).toMatchInlineSnapshot(`"7d9cb96dd9ce4af44046456d82f909b69c0601c1"`);
     expect(() => checkManifest(renderManifest())).not.toThrow();
-    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 2, schema: 3 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
-    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 1, schema: 4 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
+    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 2, schema: 4 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
+    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 1, schema: 5 }))).toThrow(expect.objectContaining({ code: 'newer-format' }));
+    // Data from older versions is read, and rewritten in the current format by the next sync that changes anything.
+    expect(() => checkManifest(JSON.stringify({ app: 'groundwork', format: 1, schema: 3 }))).not.toThrow();
     expect(() => checkManifest('{')).toThrow(expect.objectContaining({ code: 'bad-data' }));
   });
 });
