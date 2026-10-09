@@ -10,6 +10,8 @@ import { SnackDialog } from '../components/dialogs/SnackDialog';
 import { EntryRow } from '../components/EntryRow';
 import { Icon } from '../components/Icon';
 import { useModals } from '../components/Modal';
+import { hasPlannedCard, PlannedCard } from '../components/plans/PlannedCard';
+import { usePlanActions } from '../components/plans/usePlanActions';
 import { SampleBanner } from '../components/SampleBanner';
 import { save } from '../components/toast';
 import { Button, Chip, Dot, PageHead, SectionHead, TagChips, vars } from '../components/ui';
@@ -32,6 +34,7 @@ export function TodayPage() {
       <SnackCard />
       <div className="today-grid">
         <div className="stack">
+          <PlannedCard />
           <TodayTraining />
           <SnackList />
         </div>
@@ -278,10 +281,17 @@ function TodayTraining() {
   const d = useData();
   const t = useToday();
   const navigate = useNavigate();
+  const plans = usePlanActions();
   const entries = entriesOn(d, t);
   return (
     <section className="card">
       <SectionHead title="Today's training">
+        {/* With nothing planned the Planned card is hidden, so Today still has a way in to planning. */}
+        {!hasPlannedCard(d, t) && (
+          <Button size="sm" kind="ghost" icon="calendar" onClick={() => plans.newPlan(t)}>
+            Plan a workout
+          </Button>
+        )}
         <Button size="sm" kind="primary" icon="plus" onClick={() => navigate('/log')}>
           Log exercise
         </Button>

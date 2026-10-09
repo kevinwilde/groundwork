@@ -229,7 +229,7 @@ The workout is phone-first and laid out for one thumb.
 
 ### 5. Entry points
 
-- [ ] Today: the Planned card.
+- [x] Today: the Planned card.
 - [ ] Calendar: dashed outlines and the plan list in the day dialog.
 - [ ] Log: **Plan for later**, and **Start workout** in `SessionLogger`.
 

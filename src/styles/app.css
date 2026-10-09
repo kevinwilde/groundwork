@@ -2965,6 +2965,82 @@ code {
   }
 }
 
+.plan-today-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-today-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-today-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-today-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.plan-today-row .btn {
+  min-height: 44px;
+}
+.plan-coming {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.plan-coming-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plan-coming-row:hover {
+  background: var(--surface-2);
+}
+.plan-coming-day {
+  font-weight: 700;
+}
+.plan-today-missed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  font-size: 14px;
+}
+.plan-today-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 -10px -6px;
+}
+@media (max-width: 899px) {
+  .plan-today-missed .btn,
+  .plan-today-foot .btn {
+    height: 44px;
+  }
+}
+
 /* ---------- workout ---------- */
 /* Phone-first, for one thumb: big rows, a 44 × 44 tick on the right. */
 .link-btn {
