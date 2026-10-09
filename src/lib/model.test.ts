@@ -59,9 +59,22 @@ describe('quick entry', () => {
     expect(parseQuick(hold, '2x1:30')).toEqual([{ duration: 90 }, { duration: 90 }]);
     expect(parseQuick(hold, '3 x 45 s')).toHaveLength(3);
   });
+  it('takes / for x and @, so it can be typed on the iPhone number keys', () => {
+    expect(parseQuick(lift, '3/6/100')).toEqual(parseQuick(lift, '3x6@100'));
+    expect(parseQuick(lift, '3/6@100')).toEqual(parseQuick(lift, '3x6@100'));
+    expect(parseQuick(lift, '3 / 6 / 102.5')?.[0]).toEqual({ reps: 6, weight: 102.5 });
+    expect(parseQuick(lift, '1/6/100')).toEqual([{ reps: 6, weight: 100 }]);
+    expect(parseQuick(hold, '3/1:30')).toEqual([{ duration: 90 }, { duration: 90 }, { duration: 90 }]);
+  });
+  it('reads the number before the first / as the set count, like x', () => {
+    expect(parseQuick(lift, '6/100')).toEqual(parseQuick(lift, '6x100'));
+    expect(parseQuick(lift, '6/100')).toHaveLength(6);
+    expect(parseQuick(lift, '6/100')?.[0]).toEqual({ reps: 100 });
+  });
   it('rejects input it cannot map', () => {
     expect(parseQuick(lift, 'heavy')).toBeNull();
     expect(parseQuick(bw, '3x10@20')).toBeNull(); // bodyweight has one field
+    expect(parseQuick(bw, '3/10/20')).toBeNull();
     expect(parseQuick(lift, '')).toBeNull();
   });
   it('validates single fields', () => {

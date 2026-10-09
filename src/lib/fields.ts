@@ -25,21 +25,22 @@ export function toInput(field: TypeField, v: unknown): string {
 }
 
 /**
- * Quick entry for set-based types: "3x6@100", "3 × 60s", "5x5 225", "6@100".
- * The leading "N x" is the set count; remaining numbers fill the type's fields in order.
+ * Quick entry for set-based types: "3x6@100", "3/6/100", "3 × 60s", "5x5 225", "6@100".
+ * A leading "N x" or "N/" is the set count, so "6/100" is six sets of 100 reps, like "6x100";
+ * remaining numbers fill the type's fields in order.
  */
 export function parseQuick(type: ExerciseType, text: string): SetValues[] | null {
   let str = text.trim().toLowerCase().replace(/×/g, 'x');
   if (!str) return null;
   let sets = 1;
-  const m = str.match(/^(\d+)\s*x\s*(.+)$/);
+  const m = str.match(/^(\d+)\s*[x/]\s*(.+)$/);
   if (m) {
     sets = Number(m[1]);
     str = m[2];
   }
   // "60 s" -> "60s" so a unit never becomes its own token
   str = str.replace(/(\d)\s+(s|sec|secs|min|m|h|lb|lbs|kg)\b/g, '$1$2');
-  const tokens = str.split(/\s*(?:@|x|at|,|\s)\s*/).filter(Boolean);
+  const tokens = str.split(/\s*(?:@|x|\/|at|,|\s)\s*/).filter(Boolean);
   const fields = type.fields.filter((f) => f.kind !== 'text');
   if (!tokens.length || tokens.length > fields.length || sets < 1 || sets > 50) return null;
   const set: SetValues = {};
