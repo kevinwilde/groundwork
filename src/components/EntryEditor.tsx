@@ -155,6 +155,9 @@ export function EntryEditor({ formId, exercise, initial, date, excludeId, mode =
               id={`${formId}-quick`}
               aria-label="Quick entry"
               autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder={quickPlaceholder(type)}
               value={quick}
               onChange={(e) => setQuick(e.target.value)}

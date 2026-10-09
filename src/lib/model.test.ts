@@ -4,7 +4,7 @@ import { buildData, EMPTY_RAW } from '../data/snapshot';
 import { STARTER_TYPES } from '../db/seed';
 import type { BodyPart, Checkin, ExerciseType, Plan } from '../db/types';
 import { entry, library, rawFromOps } from '../test/fixtures';
-import { parseField, parseQuick } from './fields';
+import { parseField, parseQuick, quickPlaceholder } from './fields';
 import { lastEntry, metrics, nextOrder, opsDeleteBodyPart, opsDeleteExercise, opsDeleteTag, opsMoveBodyPart, pace, painsOf, snackQueue, summarize } from './model';
 
 const type = (id: string) => ({ ...STARTER_TYPES.find((t) => t.id === id)!, createdAt: 0 }) as ExerciseType;
@@ -59,9 +59,38 @@ describe('quick entry', () => {
     expect(parseQuick(hold, '2x1:30')).toEqual([{ duration: 90 }, { duration: 90 }]);
     expect(parseQuick(hold, '3 x 45 s')).toHaveLength(3);
   });
+  it('takes / for x and @, so it can be typed on the iPhone number keys', () => {
+    expect(parseQuick(lift, '3/6/100')).toEqual(parseQuick(lift, '3x6@100'));
+    expect(parseQuick(lift, '3/6@100')).toEqual(parseQuick(lift, '3x6@100'));
+    expect(parseQuick(lift, '3 / 6 / 102.5')?.[0]).toEqual({ reps: 6, weight: 102.5 });
+    expect(parseQuick(lift, '1/6/100')).toEqual([{ reps: 6, weight: 100 }]);
+    expect(parseQuick(hold, '3/1:30')).toEqual([{ duration: 90 }, { duration: 90 }, { duration: 90 }]);
+  });
+  it('reads the number before the first / as the set count, like x', () => {
+    expect(parseQuick(lift, '6/100')).toEqual(parseQuick(lift, '6x100'));
+    expect(parseQuick(lift, '6/100')).toHaveLength(6);
+    expect(parseQuick(lift, '6/100')?.[0]).toEqual({ reps: 100 });
+  });
+  it('concatenates comma-separated groups', () => {
+    const mixed = [
+      { reps: 6, weight: 100 },
+      { reps: 6, weight: 100 },
+      { reps: 5, weight: 110 },
+    ];
+    expect(parseQuick(lift, '2x6@100, 5@110')).toEqual(mixed);
+    expect(parseQuick(lift, '2/6/100,1/5/110')).toEqual(mixed);
+    expect(parseQuick(lift, '6@100,')).toEqual([{ reps: 6, weight: 100 }]);
+    expect(parseQuick(lift, '6@100, heavy')).toBeNull();
+    expect(parseQuick(lift, ' , ')).toBeNull();
+  });
+  it('suggests examples it can read', () => {
+    expect(quickPlaceholder(lift)).toBe('e.g. 3/6/100');
+    for (const t of [lift, hold, bw]) expect(parseQuick(t, quickPlaceholder(t).replace('e.g. ', ''))).toHaveLength(3);
+  });
   it('rejects input it cannot map', () => {
     expect(parseQuick(lift, 'heavy')).toBeNull();
     expect(parseQuick(bw, '3x10@20')).toBeNull(); // bodyweight has one field
+    expect(parseQuick(bw, '3/10/20')).toBeNull();
     expect(parseQuick(lift, '')).toBeNull();
   });
   it('validates single fields', () => {

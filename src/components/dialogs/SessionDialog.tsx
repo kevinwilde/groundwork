@@ -168,6 +168,9 @@ export function SessionDialog({ session, items, onSaved, onClose }: Props) {
                       id={`${formId}-plan-${r.key}`}
                       aria-label={`Plan for ${ex.name}`}
                       autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       placeholder={`Plan, ${quickPlaceholder(type)}`}
                       value={r.plan}
                       onChange={(e) => setRow(r.key, { plan: e.target.value })}
