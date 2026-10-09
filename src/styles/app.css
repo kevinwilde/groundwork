@@ -2753,6 +2753,218 @@ code {
   }
 }
 
+/* ---------- plans ---------- */
+.plan-status {
+  --c: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--surface));
+  background: color-mix(in srgb, var(--c) 12%, var(--surface));
+  color: color-mix(in srgb, var(--c) 80%, var(--ink));
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.plan-status.planned {
+  --c: var(--accent);
+  background: transparent;
+}
+.plan-status.in-progress {
+  --c: var(--accent);
+}
+.plan-status.missed {
+  --c: var(--warn);
+}
+.plan-status.done {
+  --c: var(--good);
+}
+.plan-days {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-day:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-day.has {
+  padding-bottom: 12px;
+}
+.plan-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+.plan-day-name {
+  font: 700 17px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.plan-day-date {
+  margin-left: 6px;
+  font: 500 14px/1 var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+.plan-day-head .btn {
+  min-height: 44px;
+}
+.plan-day-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.plan-card.in-progress {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.plan-card-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 20px/1.05 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.plan-card-list {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.plan-card-meta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.plan-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.plan-card-del {
+  margin-left: auto;
+}
+.plan-missed-list {
+  display: flex;
+  flex-direction: column;
+}
+.plan-missed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-missed:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.plan-missed-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.plan-missed-actions {
+  display: flex;
+  gap: 6px;
+}
+.plan-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.plan-editor-fields {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 12px;
+}
+.plan-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plan-block {
+  gap: 10px;
+  scroll-margin: 80px;
+}
+.plan-block-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.plan-last {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.plan-copy-field {
+  flex: 1;
+}
+.plan-copy-btn {
+  align-self: flex-end;
+}
+@media (max-width: 600px) {
+  .plan-editor-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-editor-fields .date-field {
+    max-width: none;
+  }
+  .plan-day-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Touch screens: every plan control is at least 44 × 44. */
+@media (max-width: 899px) {
+  .plan-card-actions .btn,
+  .plan-missed-actions .btn,
+  .plan-block .btn.sm {
+    height: 44px;
+  }
+  .plan-card-actions .icon-btn,
+  .plan-block-head .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 /* ---------- motion ---------- */
 @keyframes fade-in {
   from {

@@ -213,8 +213,8 @@ The workout is phone-first and laid out for one thumb.
 
 ### 3. Plans page and editor
 
-- [ ] `#/plan` with the Missed, Next 14 days and Later sections, plan cards and their actions.
-- [ ] **+ Plan** source picker. Plan editor page for new and existing plans.
+- [x] `#/plan` with the Missed, Next 14 days and Later sections, plan cards and their actions.
+- [x] **+ Plan** source picker. Plan editor page for new and existing plans.
 
 ### 4. Workout screen
 
