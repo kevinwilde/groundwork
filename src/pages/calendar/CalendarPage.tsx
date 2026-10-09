@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DayDialog } from '../../components/dialogs/DayDialog';
 import { useModals } from '../../components/Modal';
 import { SampleBanner } from '../../components/SampleBanner';
@@ -24,6 +25,7 @@ export function CalendarPage() {
   const d = useData();
   const t = useToday();
   const modals = useModals();
+  const navigate = useNavigate();
   const wide = useMediaQuery('(min-width: 900px)');
   const [stored, setStored] = useLocalStorage<Stored>('gw.calendar', {});
   const [anchor, setAnchor] = useState<DateStr>(t);
@@ -54,7 +56,15 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHead title="Calendar" eyebrow="See how often" />
+      <PageHead
+        title="Calendar"
+        eyebrow="See how often"
+        actions={
+          <Button size="sm" kind="ghost" icon="calendar" onClick={() => navigate('/plan')}>
+            Plans
+          </Button>
+        }
+      />
       <SampleBanner />
       <SavedViews config={config} onApply={replace} />
       <Filters config={config} update={update} open={filtersOpen} onOpenChange={(open) => setStored((s) => ({ ...s, filtersOpen: open }))} />
