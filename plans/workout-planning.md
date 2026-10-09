@@ -205,10 +205,10 @@ The workout is phone-first and laid out for one thumb.
 
 ### 2. Plan logic (`src/lib/plans.ts`, pure, tested)
 
-- [ ] Status, progress and current set.
-- [ ] Build a plan from a session, from a day, or blank.
-- [ ] `bumpTargets`, `diffFromTarget`.
-- [ ] Op builders: tick, untick, set targets, add/skip set, skip/add exercise, finish/reopen, move, duplicate, delete.
+- [x] Status, progress and current set.
+- [x] Build a plan from a session, from a day, or blank.
+- [x] `bumpTargets`, `diffFromTarget`.
+- [x] Op builders: tick, untick, set targets, add/skip set, skip/add exercise, finish/reopen, move, duplicate, delete.
 - [ ] `opsDeleteEntry`, wired into `EntryRow` and `EntryDialog`.
 
 ### 3. Plans page and editor

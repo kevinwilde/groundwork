@@ -53,6 +53,8 @@ const sameYear = (s: DateStr) => s.slice(0, 4) === today().slice(0, 4);
 
 /** "Fri, Sep 25" */
 export const fmtDate = (s: DateStr) => format(parseDate(s), sameYear(s) ? 'EEE, MMM d' : 'EEE, MMM d, yyyy');
+/** "Fri" */
+export const fmtWeekday = (s: DateStr) => format(parseDate(s), 'EEE');
 /** "Sep 25" */
 export const fmtShort = (s: DateStr) => format(parseDate(s), sameYear(s) ? 'MMM d' : 'MMM d, yyyy');
 /** "Friday, September 25" */
